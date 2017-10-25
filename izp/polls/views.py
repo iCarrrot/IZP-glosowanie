@@ -47,11 +47,20 @@ def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     try:
         selected_choice = question.choice_set.get(pk=request.POST['choice'])
+        print(request.POST['code'])
+        if request.POST['code'] == "" or not question.is_correct_code(request.POST['code']):
+            raise AttributeError
+
     except (KeyError, Choice.DoesNotExist):
         # Redisplay the question voting form.
         return render(request, 'polls/detail.html', {
             'question': question,
             'error_message': "You didn't select a choice.",
+        })
+    except (AttributeError):
+        return render(request, 'polls/detail.html', {
+            'question': question,
+            'error_message': "Invalid access code",
         })
     else:
         selected_choice.votes += 1
