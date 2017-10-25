@@ -1,8 +1,14 @@
 # IZP-glosowanie
-[IZP] Projekt "Głosowanie"
 
-To test project run:
+Requirements:
+* python 3.6.3
+* django 1.11.6
 
-git clone https://github.com/czapiga/IZP-glosowanie.git<br/>
-cd IZP-glosowanie/izp <br/>
-python manage.py runserver<br/>
+To start server with application on you local machine please execute following commands:
+```
+$ git clone https://github.com/czapiga/IZP-glosowanie.git
+$ cd IZP-glosowanie/izp
+$ python manage.py runserver
+```
+Django will inform you in terminal about server IP address and port.
+After starting server you can go to [admin home page](http://127.0.0.1:8000/admin) and [list of active polls](http://127.0.0.1:8000/polls) to check if application actually started.
