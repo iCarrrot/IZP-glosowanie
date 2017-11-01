@@ -14,23 +14,17 @@ class IndexView(generic.ListView):
     def get_queryset(self):
         return Question.objects.filter(
             pub_date__lte=timezone.now()
-        ).order_by('-pub_date')[:5]
+        ).order_by('-pub_date')
 
 
 class DetailView(generic.DetailView):
     model = Question
     template_name = 'polls/detail.html'
 
-    def get_queryset(self):
-        return Question.objects.filter(pub_date__lte=timezone.now())
-
 
 class ResultsView(generic.DetailView):
     model = Question
     template_name = 'polls/results.html'
-
-    def get_queryset(self):
-        return Question.objects.filter(pub_date__lte=timezone.now())
 
 
 def vote(request, question_id):
