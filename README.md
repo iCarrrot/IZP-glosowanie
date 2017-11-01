@@ -8,6 +8,8 @@ To start server with application on you local machine please execute following c
 ```
 $ git clone https://github.com/czapiga/IZP-glosowanie.git
 $ cd IZP-glosowanie/izp
+$ python manage.py makemigrations polls
+$ python manage.py migrate
 $ python manage.py runserver
 ```
 Django will inform you in terminal about server IP address and port.
