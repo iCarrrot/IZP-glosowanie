@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.views import generic
 from django.utils import timezone
 
-from .models import Choice, Question
+from .models import Choice, Question, Vote
 
 
 class IndexView(generic.ListView):
@@ -37,9 +37,9 @@ def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
 
     try:
-        selected_choice = question.choice_set.get(pk=request.POST['choice'])
-        print(request.POST['code'])
-        if request.POST['code'] == "" or not question.is_code_correct(request.POST['code']):
+        choice = question.choice_set.get(pk=request.POST['choice'])
+        code = request.POST['code']
+        if code == '' or not question.is_code_correct(code):
             raise AttributeError
 
     except (KeyError, Choice.DoesNotExist):
@@ -55,8 +55,13 @@ def vote(request, question_id):
         })
 
     else:
-        # TODO if someone voted using the same access code, we have to invalidate last vote (just remove 1 from last
-        # choice .votes because we want to keep all the votes in database)
-        selected_choice.votes += 1
-        selected_choice.save()
+        prev_vote = Vote.objects.filter(code__exact=code, question__exact=question).last()
+        if prev_vote:
+            prev_vote.choice.votes -= 1
+            prev_vote.choice.save()
+
+        choice = Choice.objects.get(pk=choice.id)
+        choice.votes += 1
+        choice.save()
+        Vote.objects.create(question=question, choice=choice, code=code)
         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))

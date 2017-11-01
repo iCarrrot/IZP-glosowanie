@@ -26,9 +26,6 @@ class Question(models.Model):
 # TODO Create SimpleQuestion class (derived from Question) with predefined, fixed set of choices - (Yes/No)
 # TODO Create OpenQuestion class (derived from Question) with no predefined choices
 
-# TODO I think we need to keep track of all votes with information about vote date and used access code. Maybe it would
-#      be nice to introduce Vote model, with foreign keys to Question and Choice.
-
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=200)
@@ -36,3 +33,13 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.choice_text
+
+
+class Vote(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
+    code = models.CharField(max_length=10)
+    date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.question.question_text + ' ' + self.choice.choice_text + ' ' + self.code
