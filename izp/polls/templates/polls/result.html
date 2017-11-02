@@ -1,0 +1,23 @@
+{% if error %}
+<p><strong>{{error}}</strong></p>
+{% else %}
+<h1>{{ question.question_text }}</h1>
+<h3>Wynik głosowania:</h3>
+<ul>
+    {% for choice in choices %}
+    <li>{{ choice.choice_text }} : {{ choice.votes }}</li>
+    {% endfor %}
+</ul>
+
+<br>
+<h3>Użyte kody:</h3>
+<ul>
+    <li>(kod, liczba użyć, ostatni głos)</li>
+    {% for code in codes %}
+    <li>{{ code.code }}, {{ code.num_of_votes }}, {{ code.last_choice }}</li>
+    {% endfor %}
+</ul>
+
+{% endif %}
+<br>
+<a href="{% url 'polls:index' %}">Głosowania</a>

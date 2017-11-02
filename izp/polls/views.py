@@ -1,35 +1,47 @@
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.views import generic
 from django.utils import timezone
 
 from .models import Choice, Question, Vote
 
 
-class IndexView(generic.ListView):
-    template_name = 'polls/index.html'
-    context_object_name = 'latest_question_list'
-
-    def get_queryset(self):
-        return Question.objects.filter(
-            pub_date__lte=timezone.now()
-        ).order_by('-pub_date')
+def index(request):
+    return render(request, 'polls/index.html',
+                  {'questions_list': Question.objects.order_by('-end_date', '-start_date')})
 
 
-class DetailView(generic.DetailView):
-    model = Question
-    template_name = 'polls/detail.html'
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    if question.start_date > timezone.now() or question.end_date < timezone.now():
+        return render(request, 'polls/detail.html', {
+            'question': question, 'error': "Głosowanie nie jest aktywne"})
+    return render(request, 'polls/detail.html', {'question': question})
 
 
-class ResultsView(generic.DetailView):
-    model = Question
-    template_name = 'polls/results.html'
+def result(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    if timezone.now() < question.end_date:
+        return render(request, 'polls/result.html', {'error': 'Głosowanie jeszcze się nie zakończyło'})
+
+    choices = Choice.objects.filter(question__exact=question).order_by('-votes')
+    codes = []
+    for code in question.access_codes:
+        num_of_votes = Vote.objects.filter(question__exact=question, code__exact=code).count()
+        last_choice = Vote.objects.filter(question__exact=question, code__exact=code).last()
+        if last_choice:
+            last_choice = last_choice.choice.choice_text
+        else:
+            last_choice = '-'
+        codes.append({'code': code, 'num_of_votes': num_of_votes, 'last_choice': last_choice})
+    return render(request, 'polls/result.html', {'question': question, 'choices': choices, 'codes': codes})
 
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-
+    if question.start_date > timezone.now() or question.end_date < timezone.now():
+        return render(request, 'polls/detail.html', {
+            'question': question, 'error': "Głosowanie nie jest aktywne"})
     try:
         choice = question.choice_set.get(pk=request.POST['choice'])
         code = request.POST['code']
@@ -37,19 +49,14 @@ def vote(request, question_id):
             raise AttributeError
 
     except (KeyError, Choice.DoesNotExist):
-        return render(request, 'polls/detail.html', {
-            'question': question,
-            'error_message': "Nie wybrano odpowiedzi",
-        })
+        return render(request, 'polls/detail.html', {'question': question, 'error': "Nie wybrano odpowiedzi"})
 
     except AttributeError:
-        return render(request, 'polls/detail.html', {
-            'question': question,
-            'error_message': "Niewłaściwy kod uwierzytelniający",
-        })
+        return render(request, 'polls/detail.html',
+                      {'question': question, 'error': "Niewłaściwy kod uwierzytelniający"})
 
     else:
-        prev_vote = Vote.objects.filter(code__exact=code, question__exact=question).last()
+        prev_vote = Vote.objects.filter(question__exact=question, code__exact=code).last()
         if prev_vote:
             prev_vote.choice.votes -= 1
             prev_vote.choice.save()
@@ -58,4 +65,4 @@ def vote(request, question_id):
         choice.votes += 1
         choice.save()
         Vote.objects.create(question=question, choice=choice, code=code)
-        return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+        return HttpResponseRedirect(reverse('polls:index'))

@@ -1,23 +1,27 @@
 from django.db import models
 from django.utils import timezone
-import datetime
 
 
 class Question(models.Model):
-    question_text = models.CharField('Treść pytania', max_length=200)
-    pub_date = models.DateTimeField('Data publikacji')
+    question_text = models.CharField('Pytanie', max_length=200)
+    start_date = models.DateTimeField('Data rozpoczęcia', blank=True, default=timezone.now)
+    end_date = models.DateTimeField('Data zakończenia', blank=True)
+    time = models.IntegerField('Czas na odpowiedź [minuty]', default=5)
     access_codes = ['AAA', 'BBB', 'CCC']  # TODO generate random codes
+
+    def save(self):
+        # TODO validate self.time variable
+        if not self.id:
+            if self.start_date and self.end_date:
+                self.time = (self.end_date - self.start_date) / 60
+            if not self.start_date:
+                self.start_date = timezone.now()
+            if not self.end_date:
+                self.end_date = self.start_date + timezone.timedelta(minutes=self.time)
+            super(Question, self).save()
 
     def __str__(self):
         return self.question_text
-
-    def was_published_recently(self):
-        now = timezone.now()
-        return now - datetime.timedelta(days=1) <= self.pub_date <= now
-
-    was_published_recently.admin_order_field = 'pub_date'
-    was_published_recently.boolean = True
-    was_published_recently.short_description = 'Opublikowane niedawno?'
 
     def is_code_correct(self, code):
         return code in self.access_codes
@@ -28,8 +32,8 @@ class Question(models.Model):
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=200)
-    votes = models.IntegerField(default=0)
+    choice_text = models.CharField('Odpowiedź', max_length=200)
+    votes = models.IntegerField('Liczba głosów', default=0)
 
     def __str__(self):
         return self.choice_text

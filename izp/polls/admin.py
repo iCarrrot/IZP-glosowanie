@@ -6,16 +6,18 @@ from .models import Choice, Question
 class ChoiceInline(admin.TabularInline):
     model = Choice
     extra = 2
+    verbose_name = 'Odpowiedzi'
 
 
 class QuestionAdmin(admin.ModelAdmin):
     fieldsets = [
         (None,               {'fields': ['question_text']}),
-        ('Date information', {'fields': ['pub_date'], 'classes': ['collapse']}),
+        ('Termin głosowania',  {'fields': ['start_date', 'end_date', 'time']}),
     ]
     inlines = [ChoiceInline]
-    list_display = ('question_text', 'pub_date', 'was_published_recently')
-    list_filter = ['pub_date']
+    list_display = ('question_text', 'start_date', 'end_date')
+    list_filter = ['start_date', 'end_date']
+    verbose_name = 'Pytanie'
 
 
 admin.site.register(Question, QuestionAdmin)
