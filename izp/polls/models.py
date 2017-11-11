@@ -36,7 +36,9 @@ class SimpleQuestion(Question):
         self.choice_set.create(choice_text='Nie')
 
 
-# TODO Create OpenQuestion class (derived from Question) with no predefined choices
+class OpenQuestion(Question):
+    ...
+
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -55,3 +57,4 @@ class Vote(models.Model):
 
     def __str__(self):
         return self.question.question_text + ' ' + self.choice.choice_text + ' ' + self.code
+            
