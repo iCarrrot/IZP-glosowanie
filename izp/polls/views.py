@@ -7,11 +7,8 @@ from .models import Choice, Question, Vote, OpenQuestion
 
 
 def index(request):
-    return render(request,
-                  'polls/index.html',
-                  {'questions_list': Question.objects.order_by('-end_date',
-                                                               '-start_date')})
-
+	return render(request, 'polls/index.html',
+                  {'questions_list': Question.objects.order_by('-end_date', '-start_date')})
 
 def detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
@@ -68,7 +65,7 @@ def vote(request, question_id):
                        'error': "Niewłaściwy kod uwierzytelniający"})
 
     choice = request.POST.get('choice', None)
-    new_choice = request.POST['new_choice']
+    new_choice = request.POST.get('new_choice','')
     if(choice and new_choice != ''):
         return render(
             request,
