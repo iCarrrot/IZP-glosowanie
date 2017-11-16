@@ -125,21 +125,15 @@ class QuestionIndexViewTests(TestCase):
         create_question(
             question_text="Short time question 1.",
             start=timezone.now(),
-            end=timezone.now() +
-            datetime.timedelta(
-                minutes=6))
+            end=timezone.now() + datetime.timedelta(minutes=6))
         create_question(
             question_text="Short time question 2.",
             start=timezone.now(),
-            end=timezone.now() +
-            datetime.timedelta(
-                minutes=3))
+            end=timezone.now() + datetime.timedelta(minutes=3))
         create_question(
             question_text="Short time question 3.",
             start=timezone.now(),
-            end=timezone.now() +
-            datetime.timedelta(
-                minutes=5))
+            end=timezone.now() + datetime.timedelta(minutes=5))
 
         response = self.client.get(reverse('polls:index'))
         self.assertQuerysetEqual(
@@ -209,7 +203,8 @@ class QuestionDetailViewTests(TestCase):
         response = self.client.get(reverse('polls:index'))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Future question.>', '<Question: current question.>',
+            ['<Question: Future question.>',
+             '<Question: current question.>',
              '<Question: Past question.>']
         )
 
@@ -217,21 +212,18 @@ class QuestionDetailViewTests(TestCase):
 class SimpleQuestionTests(TestCase):
 
     def test_choices_count(self):
-        q = SimpleQuestion(
-            question_text="Yes or No?")
+        q = SimpleQuestion(question_text="Tak czy nie?")
         q.save()
         self.assertIs(len(q.choice_set.all()), 2)
 
     def test_choices_content(self):
-        q = SimpleQuestion(
-            question_text="Yes or No?")
+        q = SimpleQuestion(question_text="Tak czy nie?")
         q.save()
         q = map(str, q.choice_set.all())
         self.assertIs('Tak' in q and 'Nie' in q, True)
 
     def test_initial_votes(self):
-        q = SimpleQuestion(
-            question_text="Yes or No?")
+        q = SimpleQuestion(question_text="Tak czy nie?")
         q.save()
         for choice in q.choice_set.all():
             self.assertIs(choice.votes, 0)
@@ -246,7 +238,7 @@ class CodesTests(TestCase):
             self.assertEqual(len(code), 10)
 
     def test_codes_characters(self):
-        code = generate_codes(1, 1000)[0]
+        code = generate_codes(1, 20)[0]
         char_base = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         for char in code:
             self.assertIn(char, char_base)
@@ -261,6 +253,6 @@ class CodesTests(TestCase):
 
     def test_codes_uniqueness(self):
         codes = generate_codes(100, 10)
-        while codes:  # codes equals true if its not empty
+        while codes:
             code = codes.pop()
             self.assertNotIn(code, codes)
