@@ -8,6 +8,7 @@ from easy_pdf.rendering import render_to_pdf_response
 from .models import Choice, Question, Vote, OpenQuestion
 from .codes import generate_codes
 
+
 def index(request):
     return render(request, 'polls/index.html',
                   {'questions_list': Question.objects.order_by('-end_date',
@@ -109,12 +110,16 @@ def vote(request, question_id):
     Vote.objects.create(question=question, choice=choice, code=code)
     return HttpResponseRedirect(reverse('polls:index'))
 
+
 @user_passes_test(lambda u: u.is_superuser)
 def codes(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/codesList.html', {"codes_dict" : question.access_codes})
+    return render(request, 'polls/codesList.html',
+                  {"codes_dict": question.access_codes})
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render_to_pdf_response(request, 'polls/codesList.html', {"codes_dict" : question.access_codes})
+    return render_to_pdf_response(
+        request, 'polls/codesList.html', {"codes_dict": question.access_codes})
