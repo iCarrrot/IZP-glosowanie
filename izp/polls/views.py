@@ -121,5 +121,5 @@ def codes(request, question_id):
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render_to_pdf_response(
-        request, 'polls/codesList.html', {"codes_dict": question.access_codes})
+    return render_to_pdf_response(request, 'polls/codesList.html',
+                                  {"codes_dict": question.access_codes})
