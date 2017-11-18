@@ -5,8 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
 
-from .models import Choice, Question, Vote, OpenQuestion
-from .codes import generate_codes
+from .models import AccessCode, Choice, Question, Vote, OpenQuestion
 
 
 def index(request):
@@ -38,16 +37,14 @@ def result(request, question_id):
     choices = Choice.objects.filter(
         question__exact=question).order_by('-votes')
     codes = []
-    for code in question.access_codes:
-        num_of_votes = Vote.objects.filter(
-            question__exact=question, code__exact=code).count()
+    for code in question.accesscode_set.all():
         last_choice = Vote.objects.filter(
             question__exact=question, code__exact=code).last()
         if last_choice:
             last_choice = last_choice.choice.choice_text
         else:
             last_choice = '-'
-        codes.append({'code': code, 'num_of_votes': num_of_votes,
+        codes.append({'code': code.code, 'num_of_votes': code.counter,
                       'last_choice': last_choice})
     return render(request, 'polls/result.html',
                   {'question': question, 'choices': choices, 'codes': codes})
@@ -98,6 +95,7 @@ def vote(request, question_id):
         choice = Choice.objects.create(
             question=question, choice_text=new_choice)
 
+    code = AccessCode.objects.get(question=question, code=code)
     prev_vote = Vote.objects.filter(
         question__exact=question, code__exact=code).last()
     if prev_vote:
@@ -107,6 +105,8 @@ def vote(request, question_id):
     choice = Choice.objects.get(pk=choice.id)
     choice.votes += 1
     choice.save()
+    code.counter += 1
+    code.save()
     Vote.objects.create(question=question, choice=choice, code=code)
     return HttpResponseRedirect(reverse('polls:index'))
 
@@ -115,11 +115,11 @@ def vote(request, question_id):
 def codes(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render(request, 'polls/codesList.html',
-                  {"codes_dict": question.access_codes})
+                  {"codes_dict": question.get_codes()})
 
 
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render_to_pdf_response(request, 'polls/codesList.html',
-                                  {"codes_dict": question.access_codes})
+                                  {"codes_dict": question.get_codes()})

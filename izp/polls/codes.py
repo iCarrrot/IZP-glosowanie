@@ -6,7 +6,7 @@ In other modules use the generate_codes function only.
 """
 
 from string import digits, ascii_uppercase
-from random import choice
+from random import choice, seed
 
 
 def _create_code(char_base, length):
@@ -23,6 +23,7 @@ def generate_codes(number_of_codes, code_length):
     of a given length. Please be aware that code length
     must be big enough to randomly generate several different codes.
     """
+    seed()
     char_base = digits + ascii_uppercase
     if number_of_codes > len(char_base) ** code_length / 10:
         raise ValueError("Codes not long enough")
