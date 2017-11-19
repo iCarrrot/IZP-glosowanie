@@ -65,6 +65,10 @@ class OpenQuestion(Question):
     ...
 
 
+class PeopleQuestion(OpenQuestion):
+    ...
+
+
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField('Odpowiedź', max_length=200)
@@ -79,6 +83,9 @@ class AccessCode(models.Model):
     code = models.CharField('Kod', max_length=8)
     counter = models.IntegerField('Liczba użyć', default=0)
 
+    def __str__(self):
+        return self.code
+
 
 class Vote(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -88,4 +95,5 @@ class Vote(models.Model):
 
     def __str__(self):
         return self.question.question_text + ' ' + \
-            self.choice.choice_text + ' ' + self.code
+            self.choice.choice_text + ' ' \
+            + self.code.code

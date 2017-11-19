@@ -5,12 +5,12 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
-from .models import Question, SimpleQuestion
+from .models import Question, SimpleQuestion, OpenQuestion, PeopleQuestion
 from .codes import generate_codes
 
 
 def create_question(question_text, days=0, start=0, end=0):
-    """
+    """  
     Create a question with the given `question_text` and published the
     given number of `days` offset to now (negative for questions published
     in the past, positive for questions that have yet to be published).
@@ -207,6 +207,69 @@ class QuestionDetailViewTests(TestCase):
              '<Question: current question.>',
              '<Question: Past question.>']
         )
+
+    def test_basic_peopleQuestion(self):
+        """
+        Test for detail view of people question
+        """
+        peopleQuestion = PeopleQuestion(question_text="Question?")
+        peopleQuestion.save()
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(
+            choice_text="dr hab. Jean-Marie de Nivelle")
+        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        response = self.client.get(url)
+        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, 'dr Grzegorz Świderski')
+        self.assertContains(response, 'dr hab. Jean-Marie de Nivelle')
+        self.assertContains(response, 'new_choice')
+
+    def test_empty_people_question(self):
+        """
+        Test for detail view of empty people question
+        """
+        peopleQuestion = PeopleQuestion(question_text="Question?")
+        peopleQuestion.save()
+        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        response = self.client.get(url)
+        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, 'new_choice')
+
+
+class QuestionVoteViewTests(TestCase):
+
+    def test_multiple_answers(self):
+        peopleQuestion = PeopleQuestion(question_text="Question?")
+        peopleQuestion.save()
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
+        peopleQuestion.choice_set.create(choice_text="dr hab. Jean-Marie de Nivelle")
+        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        response = self.client.get(url)
+        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, 'dr Grzegorz Świderski')
+        self.assertContains(response, 'dr hab. Jean-Marie de Nivelle')
+        self.assertContains(response, '20')
+        self.assertContains(response, '1')
+        self.assertContains(response, 'new_choice')
 
 
 class SimpleQuestionTests(TestCase):

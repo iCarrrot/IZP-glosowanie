@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
 
-from .models import AccessCode, Choice, Question, Vote, OpenQuestion
+from .models import AccessCode, Choice, Question, Vote, OpenQuestion, PeopleQuestion
 
 
 def index(request):
@@ -21,11 +21,16 @@ def detail(request, question_id):
         return render(request, 'polls/detail.html', {
             'question': question, 'error': "Głosowanie nie jest aktywne"})
     try:
-        openQuestion = OpenQuestion.objects.get(pk=question_id)
-    except OpenQuestion.DoesNotExist:
-        return render(request, 'polls/detail.html', {'question': question})
+        peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
+    except PeopleQuestion.DoesNotExist:
+        try:
+            openQuestion = OpenQuestion.objects.get(pk=question_id)
+        except OpenQuestion.DoesNotExist:
+            return render(request, 'polls/detail.html', {'question': question})
+        return render(request, 'polls/detail.html',
+                      {'question': openQuestion, 'is_open': True})
     return render(request, 'polls/detail.html',
-                  {'question': openQuestion, 'is_open': True})
+                  {'question': peopleQuestion, 'peopleQ': True})
 
 
 def result(request, question_id):
@@ -90,6 +95,13 @@ def vote(request, question_id):
             return render(
                 request, 'polls/detail.html',
                 {'question': question, 'error': "Odpowiedź nie istnieje"})
+    if not choice and PeopleQuestion.objects.filter(pk=question.pk).exists():
+        try:
+            choice = Choice.objects.get(
+                question__exact=question, choice_text=new_choice)
+        except:
+            choice = Choice.objects.create(
+                question=question, choice_text=new_choice)
 
     if not choice and OpenQuestion.objects.filter(pk=question.pk).exists():
         choice = Choice.objects.create(
