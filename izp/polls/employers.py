@@ -2,6 +2,8 @@
 Employers iterator
 In new file for clear code.
 """
+
+
 def employers_iterator():
     employers = [
         "dr hab. Dariusz Biernacki",
