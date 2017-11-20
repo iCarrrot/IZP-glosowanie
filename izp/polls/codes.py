@@ -25,7 +25,7 @@ def generate_codes(number_of_codes, code_length):
     """
     seed()
     char_base = digits + ascii_uppercase
-    if number_of_codes > len(char_base) ** code_length / 10:
+    if code_length < 5:
         raise ValueError("Codes not long enough")
 
     generated_codes = []
