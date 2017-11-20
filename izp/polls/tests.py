@@ -10,7 +10,7 @@ from .codes import generate_codes
 
 
 def create_question(question_text, days=0, start=0, end=0):
-    """  
+    """
     Create a question with the given `question_text` and published the
     given number of `days` offset to now (negative for questions published
     in the past, positive for questions that have yet to be published).
@@ -261,7 +261,8 @@ class QuestionVoteViewTests(TestCase):
         peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
         peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
         peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr hab. Jean-Marie de Nivelle")
+        peopleQuestion.choice_set.create(
+            choice_text="dr hab. Jean-Marie de Nivelle")
         url = reverse('polls:detail', args=(peopleQuestion.id,))
         response = self.client.get(url)
         self.assertContains(response, peopleQuestion.question_text)

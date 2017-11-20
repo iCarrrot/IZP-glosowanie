@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
 
-from .models import AccessCode, Choice, Question, Vote, OpenQuestion, PeopleQuestion
+from .models import AccessCode, Choice, Question, Vote, \
+    OpenQuestion, PeopleQuestion
 
 
 def index(request):
@@ -99,7 +100,7 @@ def vote(request, question_id):
         try:
             choice = Choice.objects.get(
                 question__exact=question, choice_text=new_choice)
-        except:
+        except Exception as e:
             choice = Choice.objects.create(
                 question=question, choice_text=new_choice)
 
