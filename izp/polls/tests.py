@@ -27,7 +27,10 @@ def create_question(question_text, days=0, start=0, end=0):
     if days != 0 and start != 0 and end == 0:
         end = start + datetime.timedelta(days=days)
         return Question.objects.create(
-            poll=poll, question_text=question_text, start_date=start, end_date=end)
+            poll=poll,
+            question_text=question_text,
+            start_date=start,
+            end_date=end)
     return Question.objects.create(
         poll=poll, question_text=question_text, start_date=start, end_date=end)
 
@@ -246,7 +249,7 @@ class CodesTests(TestCase):
             self.assertEqual(len(code), 10)
 
     def test_codes_characters(self):
-        code = generate_codes(1, 20)[0]
+        code = generate_codes(1, 1000)[0]
         char_base = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         for char in code:
             self.assertIn(char, char_base)
