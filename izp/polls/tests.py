@@ -208,18 +208,18 @@ class QuestionDetailViewTests(TestCase):
              '<Question: Past question.>']
         )
 
-    def test_basic_peopleQuestion(self):
+    def test_basic_people_question(self):
         """
         Test for detail view of people question
         """
-        peopleQuestion = PeopleQuestion(question_text="Question?")
-        peopleQuestion.save()
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(
+        question = PeopleQuestion(question_text="Question?")
+        question.save()
+        question.choice_set.create(choice_text="dr Grzegorz Świderski")
+        question.choice_set.create(
             choice_text="dr hab. Jean-Marie de Nivelle")
-        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        url = reverse('polls:detail', args=(question.id,))
         response = self.client.get(url)
-        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, question.question_text)
         self.assertContains(response, 'dr Grzegorz Świderski')
         self.assertContains(response, 'dr hab. Jean-Marie de Nivelle')
         self.assertContains(response, 'new_choice')
@@ -228,48 +228,37 @@ class QuestionDetailViewTests(TestCase):
         """
         Test for detail view of empty people question
         """
-        peopleQuestion = PeopleQuestion(question_text="Question?")
-        peopleQuestion.save()
-        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        question = PeopleQuestion(question_text="Question?")
+        question.save()
+        url = reverse('polls:detail', args=(question.id,))
         response = self.client.get(url)
-        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, question.question_text)
         self.assertContains(response, 'new_choice')
 
 
 class QuestionVoteViewTests(TestCase):
 
-    def test_multiple_answers(self):
-        peopleQuestion = PeopleQuestion(question_text="Question?")
-        peopleQuestion.save()
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(choice_text="dr Grzegorz Świderski")
-        peopleQuestion.choice_set.create(
+    def test_few_answers(self):
+        """
+        Check if it is possible to add few answers,
+        and if only this answers are added.
+        """
+        question = PeopleQuestion(question_text="Question?")
+        question.save()
+        question.choice_set.create(choice_text="dr Grzegorz Świderski")
+        question.choice_set.create(
             choice_text="dr hab. Jean-Marie de Nivelle")
-        url = reverse('polls:detail', args=(peopleQuestion.id,))
+        url = reverse('polls:detail', args=(question.id,))
         response = self.client.get(url)
-        self.assertContains(response, peopleQuestion.question_text)
+        self.assertContains(response, question.question_text)
         self.assertContains(response, 'dr Grzegorz Świderski')
         self.assertContains(response, 'dr hab. Jean-Marie de Nivelle')
-        self.assertContains(response, '20')
-        self.assertContains(response, '1')
+        self.assertContains(
+            response, '<input id="1" type="radio" name="choice" value="1">')
+        self.assertContains(
+            response, '<input id="2" type="radio" name="choice" value="2">')
+        self.assertNotContains(
+            response, '<input id="3" type="radio" name="choice" value="3">')
         self.assertContains(response, 'new_choice')
 
 

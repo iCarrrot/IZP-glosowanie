@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
-
+from .employers import employers_iterator
 from .models import AccessCode, Choice, Question, Vote, \
     OpenQuestion, PeopleQuestion
 
@@ -21,17 +21,18 @@ def detail(request, question_id):
        or question.end_date < timezone.now():
         return render(request, 'polls/detail.html', {
             'question': question, 'error': "Głosowanie nie jest aktywne"})
-    try:
+    if PeopleQuestion.objects.filter(pk=question_id).exists():
         peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
-    except PeopleQuestion.DoesNotExist:
-        try:
-            openQuestion = OpenQuestion.objects.get(pk=question_id)
-        except OpenQuestion.DoesNotExist:
-            return render(request, 'polls/detail.html', {'question': question})
+        return render(request, 'polls/detail.html',
+                      {'question': peopleQuestion,
+                       'peopleQ': True,
+                       'employers': employers_iterator()})
+    elif OpenQuestion.objects.filter(pk=question_id).exists():
+        openQuestion = OpenQuestion.objects.get(pk=question_id)
         return render(request, 'polls/detail.html',
                       {'question': openQuestion, 'is_open': True})
-    return render(request, 'polls/detail.html',
-                  {'question': peopleQuestion, 'peopleQ': True})
+    else:
+        return render(request, 'polls/detail.html', {'question': question})
 
 
 def result(request, question_id):
