@@ -4,8 +4,12 @@ Tests
 import datetime
 from django.test import TestCase
 from django.utils import timezone
+from .models import SimpleQuestion, Question, Poll
+from .codes import generate_codes
 from django.urls import reverse
 
+def create_poll(poll_name):
+    return Poll.objects.create(poll_name=poll_name)
 
 def create_question(question_text, days=0, start=0, end=0):
     """
@@ -13,16 +17,19 @@ def create_question(question_text, days=0, start=0, end=0):
     given number of `days` offset to now (negative for questions published
     in the past, positive for questions that have yet to be published).
     """
+
+    poll = create_poll("test-poll")
+
     if days != 0 and start == 0 and end == 0:
         start = timezone.now() + datetime.timedelta(days=days)
         return Question.objects.create(
-            question_text=question_text, start_date=start)
+            poll=poll, question_text=question_text, start_date=start)
     if days != 0 and start != 0 and end == 0:
         end = start + datetime.timedelta(days=days)
         return Question.objects.create(
-            question_text=question_text, start_date=start, end_date=end)
+            poll=poll, question_text=question_text, start_date=start, end_date=end)
     return Question.objects.create(
-        question_text=question_text, start_date=start, end_date=end)
+        poll=poll, question_text=question_text, start_date=start, end_date=end)
 
 
 class QuestionIndexViewTests(TestCase):
@@ -210,18 +217,21 @@ class QuestionDetailViewTests(TestCase):
 class SimpleQuestionTests(TestCase):
 
     def test_choices_count(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = create_poll("test-poll")
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         self.assertIs(len(q.choice_set.all()), 2)
 
     def test_choices_content(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = create_poll("test-poll")
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         q = map(str, q.choice_set.all())
         self.assertIs('Tak' in q and 'Nie' in q, True)
 
     def test_initial_votes(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = create_poll("test-poll")
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         for choice in q.choice_set.all():
             self.assertIs(choice.votes, 0)

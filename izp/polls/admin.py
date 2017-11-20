@@ -11,7 +11,7 @@ class ChoiceInline(admin.TabularInline):
 
 class BaseQuestionAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {'fields': ['question_text']}),
+        (None, {'fields': ['poll', 'question_text']}),
         ('Termin głosowania', {'fields': ['start_date', 'end_date', 'time']}),
     ]
 

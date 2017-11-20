@@ -37,7 +37,7 @@ def result(request, question_id):
     choices = Choice.objects.filter(
         question__exact=question).order_by('-votes')
     codes = []
-    for code in question.accesscode_set.all():
+    for code in question.poll.accesscode_set.all():
         last_choice = Vote.objects.filter(
             question__exact=question, code__exact=code).last()
         if last_choice:
@@ -60,7 +60,7 @@ def vote(request, question_id):
                        'error': "Głosowanie nie jest aktywne"})
 
     code = request.POST['code']
-    if code == '' or not question.is_code_correct(code):
+    if code == '' or not question.poll.is_code_correct(code):
         return render(request,
                       'polls/detail.html',
                       {'question': question,
@@ -95,7 +95,7 @@ def vote(request, question_id):
         choice = Choice.objects.create(
             question=question, choice_text=new_choice)
 
-    code = AccessCode.objects.get(question=question, code=code)
+    code = AccessCode.objects.get(poll=question.poll, code=code)
     prev_vote = Vote.objects.filter(
         question__exact=question, code__exact=code).last()
     if prev_vote:
@@ -115,11 +115,11 @@ def vote(request, question_id):
 def codes(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render(request, 'polls/codesList.html',
-                  {"codes_dict": question.get_codes()})
+                  {"codes_dict": question.poll.get_codes()})
 
 
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render_to_pdf_response(request, 'polls/codesList.html',
-                                  {"codes_dict": question.get_codes()})
+                                  {"codes_dict": question.poll.get_codes()})
