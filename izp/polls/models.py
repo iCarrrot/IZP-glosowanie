@@ -8,8 +8,8 @@ class Poll(models.Model):
 
     def save(self, force_insert=False, force_update=False, using=None):
         super(Poll, self).save(force_insert=force_insert,
-                                force_update=force_update,
-                                using=using)
+                               force_update=force_update,
+                               using=using)
 
         if self.id and self.accesscode_set.all().count() == 0:
             for code in generate_codes(82, 8):
