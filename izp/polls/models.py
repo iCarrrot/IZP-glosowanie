@@ -2,13 +2,14 @@ from django.db import models
 from django.utils import timezone
 from .codes import generate_codes
 
+
 class Poll(models.Model):
     poll_name = models.CharField('Glosowanie', max_length=50)
 
     def save(self, force_insert=False, force_update=False, using=None):
         super(Poll, self).save(force_insert=force_insert,
-                                       force_update=force_update,
-                                       using=using)
+                                force_update=force_update,
+                                using=using)
 
         if self.id and self.accesscode_set.all().count() == 0:
             for code in generate_codes(82, 8):
@@ -58,7 +59,6 @@ class Question(models.Model):
             super(Question, self).save(force_insert=force_insert,
                                        force_update=force_update,
                                        using=using)
-
 
     def __str__(self):
         return self.question_text

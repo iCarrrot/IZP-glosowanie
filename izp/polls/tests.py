@@ -8,8 +8,10 @@ from .models import SimpleQuestion, Question, Poll
 from .codes import generate_codes
 from django.urls import reverse
 
+
 def create_poll(poll_name):
     return Poll.objects.create(poll_name=poll_name)
+
 
 def create_question(question_text, days=0, start=0, end=0):
     """
