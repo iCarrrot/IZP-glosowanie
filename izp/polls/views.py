@@ -23,14 +23,14 @@ def detail(request, question_id):
             'question': question, 'error': "Głosowanie nie jest aktywne"})
     if PeopleQuestion.objects.filter(pk=question_id).exists():
         peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/detail.html',
+        return render(request, 'polls/OpenDetail.html',
                       {'question': peopleQuestion,
                        'peopleQ': True,
                        'employers': employers_iterator()})
     elif OpenQuestion.objects.filter(pk=question_id).exists():
         openQuestion = OpenQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/detail.html',
-                      {'question': openQuestion, 'is_open': True})
+        return render(request, 'polls/OpenDetail.html',
+                      {'question': openQuestion})
     else:
         return render(request, 'polls/detail.html', {'question': question})
 
