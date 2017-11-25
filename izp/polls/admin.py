@@ -28,4 +28,4 @@ class QuestionAdmin(BaseQuestionAdmin):
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(SimpleQuestion, BaseQuestionAdmin)
 admin.site.register(OpenQuestion, QuestionAdmin)
-admin.site.register(PeopleQuestion, BaseQuestionAdmin)
+admin.site.register(PeopleQuestion, QuestionAdmin)

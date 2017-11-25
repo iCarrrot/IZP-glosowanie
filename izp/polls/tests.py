@@ -27,6 +27,19 @@ def create_question(question_text, days=0, start=0, end=0):
         question_text=question_text, start_date=start, end_date=end)
 
 
+def basic_check_of_question(cls, response, quest, error=""):
+    cls.assertContains(response, quest.question_text)
+    if error != "":
+        cls.assertContains(response, error)
+    cls.assertContains(response, 'Odp1')
+    cls.assertContains(response, 'Odp2')
+
+
+def basic_check_of_open_question(cls, response, quest, error=""):
+    basic_check_of_question(cls, response, quest, error)
+    cls.assertContains(response, 'new_choice')
+
+
 class QuestionIndexViewTests(TestCase):
     """
     Tests for views
@@ -260,6 +273,119 @@ class QuestionVoteViewTests(TestCase):
         self.assertNotContains(
             response, '<input id="3" type="radio" name="choice" value="3">')
         self.assertContains(response, 'new_choice')
+
+
+class OpenQuestionDetailViewTests(TestCase):
+    def setUp(self):
+        open_question = OpenQuestion.objects.create(
+            question_text="OpenQuestion")
+        open_question.choice_set.create(choice_text="Odp1")
+        open_question.choice_set.create(choice_text="Odp2")
+
+    def test_open_question_with_choices(self):
+        '''
+        Test for detail view of open question
+        '''
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:detail', args=(open_question.id,))
+        response = self.client.get(url)
+        basic_check_of_open_question(self, response, open_question)
+
+    def test_open_question_without_choices(self):
+        '''
+        Test for detail view of empty open question
+        '''
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:detail', args=(open_question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, open_question.question_text)
+        self.assertContains(response, 'new_choice')
+
+
+class QuestionVoteViewTests(TestCase):
+    def setUp(self):
+        question = Question.objects.create(
+            question_text="Question")
+        question.choice_set.create(choice_text="Odp1")
+        question.choice_set.create(choice_text="Odp2")
+
+    def test_no_answer_for_question(self):
+        question = Question.objects.get(question_text="Question")
+        url = reverse('polls:vote', args=(question.id,))
+        response = self.client.post(url, {'code': question.get_codes()[0]})
+        basic_check_of_question(self, response, question,
+                                "Nie wybrano odpowiedzi")
+
+    def test_invalid_access_code(self):
+        question = Question.objects.get(question_text="Question")
+        url = reverse('polls:vote', args=(question.id,))
+        response = self.client.post(
+            url,
+            {'choice': question.choice_set.all().last().id,
+             'code': ""})
+        basic_check_of_question(self, response, question,
+                                "Niewłaściwy kod uwierzytelniający")
+
+
+class OpenQuestionVoteViewTests(TestCase):
+    def setUp(self):
+        open_question = OpenQuestion.objects.create(
+            question_text="OpenQuestion")
+        open_question.choice_set.create(choice_text="Odp1")
+        open_question.choice_set.create(choice_text="Odp2")
+
+    def test_two_answers_for_open_question(self):
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(open_question.id,))
+        response = self.client.post(
+            url, {'is_open': True,
+                  'choice': open_question.choice_set.all().last().id,
+                  'new_choice': "sth",
+                  'code': open_question.get_codes()[0]})
+        basic_check_of_open_question(
+            self,
+            response,
+            open_question,
+            "Nie można głosować na istniejącą odpowiedź i \
+                          jednocześnie proponować nową")
+
+    def test_no_answers_for_open_question(self):
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(open_question.id,))
+        response = self.client.post(
+            url, {'is_open': True,
+                  'new_choice': '',
+                  'code': open_question.get_codes()[0]})
+        basic_check_of_open_question(
+            self, response, open_question, "Nie wybrano odpowiedzi")
+
+    def test_invalid_access_code_for_open_question(self):
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(open_question.id,))
+        response = self.client.post(
+            url, {'is_open': True,
+                  'choice': open_question.choice_set.all().last().id,
+                  'new_choice': '',
+                  'code': ""})
+        basic_check_of_open_question(
+            self, response, open_question, "Niewłaściwy kod uwierzytelniający")
+
+
+class OpenQuestionTests(TestCase):
+    def test_creating_open_question(self):
+        open_question = OpenQuestion.objects.create(
+            question_text="OpenQuestion")
+        open_question.choice_set.create(choice_text="Odp1")
+        open_question.choice_set.create(choice_text="Odp2")
+        self.assertIs(len(open_question.choice_set.all()), 2)
+        open_question = map(str, open_question.choice_set.all())
+        self.assertIs(
+            'Odp1' in open_question and 'Odp2' in open_question, True)
+
+    def test_creating_empty_open_question(self):
+        open_question = OpenQuestion.objects.create(
+            question_text="OpenQuestion")
+        self.assertIs(len(open_question.choice_set.all()), 0)
 
 
 class SimpleQuestionTests(TestCase):

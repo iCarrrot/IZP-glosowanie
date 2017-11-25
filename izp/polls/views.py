@@ -59,19 +59,22 @@ def result(request, question_id):
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
+    is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
     if question.start_date > timezone.now() \
        or question.end_date < timezone.now():
         return render(request,
                       'polls/detail.html',
                       {'question': question,
-                       'error': "Głosowanie nie jest aktywne"})
+                       'error': "Głosowanie nie jest aktywne",
+                       'is_open': is_open})
 
     code = request.POST['code']
     if code == '' or not question.is_code_correct(code):
         return render(request,
                       'polls/detail.html',
                       {'question': question,
-                       'error': "Niewłaściwy kod uwierzytelniający"})
+                       'error': "Niewłaściwy kod uwierzytelniający",
+                       'is_open': is_open})
 
     choice = request.POST.get('choice', None)
     new_choice = request.POST.get('new_choice', '')
@@ -82,13 +85,15 @@ def vote(request, question_id):
             {
                 'question': question,
                 'error': "Nie można głosować na istniejącą odpowiedź i \
-                          jednocześnie proponować nową"})
+                          jednocześnie proponować nową",
+                'is_open': is_open})
 
     if not choice and new_choice == '':
         return render(request, 'polls/detail.html',
                       {
                           'question': question,
-                          'error': "Nie wybrano odpowiedzi"})
+                          'error': "Nie wybrano odpowiedzi",
+                          'is_open': is_open})
 
     if choice:
         if question.choice_set.filter(pk=choice).exists():
@@ -105,7 +110,7 @@ def vote(request, question_id):
             choice = Choice.objects.create(
                 question=question, choice_text=new_choice)
 
-    if not choice and OpenQuestion.objects.filter(pk=question.pk).exists():
+    if not choice and is_open:
         choice = Choice.objects.create(
             question=question, choice_text=new_choice)
 
