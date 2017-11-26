@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Choice, Question, SimpleQuestion, OpenQuestion
+from .models import Choice, Poll, Question, SimpleQuestion, OpenQuestion
 
 
 class ChoiceInline(admin.TabularInline):
@@ -11,7 +11,7 @@ class ChoiceInline(admin.TabularInline):
 
 class BaseQuestionAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {'fields': ['question_text']}),
+        (None, {'fields': ['poll', 'question_text']}),
         ('Termin głosowania', {'fields': ['start_date', 'end_date', 'time']}),
     ]
 
@@ -24,6 +24,7 @@ class QuestionAdmin(BaseQuestionAdmin):
     inlines = [ChoiceInline]
 
 
+admin.site.register(Poll)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(SimpleQuestion, BaseQuestionAdmin)
 admin.site.register(OpenQuestion, QuestionAdmin)
