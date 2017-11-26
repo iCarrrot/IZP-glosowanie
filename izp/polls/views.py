@@ -28,6 +28,17 @@ def detail(request, question_id):
                   {'question': openQuestion, 'is_open': True})
 
 
+def format_codes_list(codes_list):
+    codes = []
+    for code in codes_list:
+        codes.append(format_code(code))
+    return codes
+
+
+def format_code(code):
+    return '-'.join([code[i:i+4] for i in range(0, len(code), 4)])
+
+
 def result(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     if timezone.now() < question.end_date:
@@ -44,10 +55,27 @@ def result(request, question_id):
             last_choice = last_choice.choice.choice_text
         else:
             last_choice = '-'
-        codes.append({'code': code.code, 'num_of_votes': code.counter,
+        codes.append({'code': format_code(code.code),
+                      'num_of_votes': code.counter,
                       'last_choice': last_choice})
     return render(request, 'polls/result.html',
                   {'question': question, 'choices': choices, 'codes': codes})
+
+
+def reformat_code(code):
+    if len(code) <= 4 or "-" not in code:
+        return code
+
+    newCode = ""
+    for l, c in enumerate(code):
+        if (l+1) % 5 == 0:
+            if l+1 == len(code) or code[l] != "-":
+                return ''
+        elif code[l] == "-":
+            return ''
+        else:
+            newCode += c
+    return newCode
 
 
 def vote(request, question_id):
@@ -62,6 +90,7 @@ def vote(request, question_id):
                        'is_open': is_open})
 
     code = request.POST['code']
+    code = reformat_code(code)
     if code == '' or not question.is_code_correct(code):
         return render(request,
                       'polls/detail.html',
@@ -122,11 +151,12 @@ def vote(request, question_id):
 def codes(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render(request, 'polls/codesList.html',
-                  {"codes_dict": question.get_codes()})
+                  {"codes_list": format_codes_list(question.get_codes())})
 
 
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render_to_pdf_response(request, 'polls/codesList.html',
-                                  {"codes_dict": question.get_codes()})
+    return render_to_pdf_response(
+        request, 'polls/codesList.html',
+        {"codes_list": format_codes_list(question.get_codes())})

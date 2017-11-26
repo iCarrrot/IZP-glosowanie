@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.urls import reverse
 from .models import Question, SimpleQuestion, OpenQuestion
 from .codes import generate_codes
+from django.contrib.auth.models import User
+from .views import reformat_code, format_codes_list
 
 
 def create_question(question_text, days=0, start=0, end=0):
@@ -356,7 +358,6 @@ class SimpleQuestionTests(TestCase):
 
 
 class CodesTests(TestCase):
-
     def test_codes_number_and_length(self):
         codes = generate_codes(10, 10)
         self.assertEqual(len(codes), 10)
@@ -382,3 +383,80 @@ class CodesTests(TestCase):
         while codes:
             code = codes.pop()
             self.assertNotIn(code, codes)
+
+
+class CodesViewsTests(TestCase):
+    def setUp(self):
+        User.objects.create_superuser(
+            'user1',
+            'user1@example.com',
+            'pswd',
+        )
+
+        self.q = Question.objects.create(question_text="question 1.")
+
+    def test_codes_html_view_as_superuser(self):
+        self.client.login(username="user1", password="pswd")
+        resp = self.client.get("/polls/" + str(self.q.id) + "/codes/",
+                               follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(
+            len(resp.context['codes_list']) == len(self.q.get_codes()))
+        self.client.logout()
+
+    def test_codes_pdf_view_as_superuser(self):
+        self.client.login(username="user1", password="pswd")
+        resp = self.client.get("/polls/" + str(self.q.id) + "/codes_pdf/",
+                               follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(
+            len(resp.context['codes_list']) == len(self.q.get_codes()))
+        self.client.logout()
+
+    def test_codes_html_view_as_user(self):
+        resp = self.client.get("polls/" + str(self.q.id) + "/codes",
+                               follow=True)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_codes_pdf_view_as_user(self):
+        resp = self.client.get("polls/" + str(self.q.id) + "/codes_pdf",
+                               follow=True)
+        self.assertEqual(resp.status_code, 404)
+
+
+class ReformatCodeTests(TestCase):
+    def test_short_code(self):
+        code = "OPA"
+        formated_code = reformat_code(code)
+        self.assertEqual(code, formated_code)
+
+    def test_code_without_separators(self):
+        code = "OPAFAJEMDEDJ"
+        formated_code = reformat_code(code)
+        self.assertEqual(code, formated_code)
+
+    def test_good_code_with_separators(self):
+        code = "IZ02-FW4Z"
+        code2 = "IZ02-FW4Z-HBQX-JWO"
+        formated_code = reformat_code(code)
+        formated_code2 = reformat_code(code2)
+        self.assertEqual("IZ02FW4Z", formated_code)
+        self.assertEqual("IZ02FW4ZHBQXJWO", formated_code2)
+
+    def test_wrong_code_with_separators(self):
+        code = "IZ02-FW4Z-"
+        code2 = "IZ-02-FW4Z-HBQX-JWO"
+        formated_code = reformat_code(code)
+        formated_code2 = reformat_code(code2)
+        self.assertEqual("", formated_code)
+        self.assertEqual("", formated_code2)
+
+
+class FormatCodeListTests(TestCase):
+    def test_format_codes_list(self):
+        codes_list = ["IZ02FW4Z", "IZPW", "IZP", "IZ0FW4GEI"]
+        formated_codes_list = format_codes_list(codes_list)
+        self.assertEqual("IZ02-FW4Z", formated_codes_list[0])
+        self.assertEqual("IZPW", formated_codes_list[1])
+        self.assertEqual("IZP", formated_codes_list[2])
+        self.assertEqual("IZ0F-W4GE-I", formated_codes_list[3])
