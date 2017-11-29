@@ -225,8 +225,7 @@ class QuestionDetailViewTests(TestCase):
         """
         Test for detail view of people question
         """
-        question = PeopleQuestion(question_text="Question?")
-        question.save()
+        question = PeopleQuestion.objects.create(question_text="Question?")
         question.choice_set.create(choice_text="dr Grzegorz Świderski")
         question.choice_set.create(
             choice_text="dr hab. Jean-Marie de Nivelle")
@@ -241,8 +240,7 @@ class QuestionDetailViewTests(TestCase):
         """
         Test for detail view of empty people question
         """
-        question = PeopleQuestion(question_text="Question?")
-        question.save()
+        question = PeopleQuestion.objects.create(question_text="Question?")
         url = reverse('polls:detail', args=(question.id,))
         response = self.client.get(url)
         self.assertContains(response, question.question_text)
@@ -250,29 +248,7 @@ class QuestionDetailViewTests(TestCase):
 
 
 class QuestionVoteViewTests(TestCase):
-
-    def test_few_answers(self):
-        """
-        Check if it is possible to add few answers,
-        and if only this answers are added.
-        """
-        question = PeopleQuestion(question_text="Question?")
-        question.save()
-        question.choice_set.create(choice_text="dr Grzegorz Świderski")
-        question.choice_set.create(
-            choice_text="dr hab. Jean-Marie de Nivelle")
-        url = reverse('polls:detail', args=(question.id,))
-        response = self.client.get(url)
-        self.assertContains(response, question.question_text)
-        self.assertContains(response, 'dr Grzegorz Świderski')
-        self.assertContains(response, 'dr hab. Jean-Marie de Nivelle')
-        self.assertContains(
-            response, '<input id="1" type="radio" name="choice" value="1">')
-        self.assertContains(
-            response, '<input id="2" type="radio" name="choice" value="2">')
-        self.assertNotContains(
-            response, '<input id="3" type="radio" name="choice" value="3">')
-        self.assertContains(response, 'new_choice')
+    ...
 
 
 class OpenQuestionDetailViewTests(TestCase):
@@ -333,42 +309,6 @@ class OpenQuestionVoteViewTests(TestCase):
             question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
-
-    def test_two_answers_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'choice': open_question.choice_set.all().last().id,
-                  'new_choice': "sth",
-                  'code': open_question.get_codes()[0]})
-        basic_check_of_open_question(
-            self,
-            response,
-            open_question,
-            "Nie można głosować na istniejącą odpowiedź i \
-                          jednocześnie proponować nową")
-
-    def test_no_answers_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'new_choice': '',
-                  'code': open_question.get_codes()[0]})
-        basic_check_of_open_question(
-            self, response, open_question, "Nie wybrano odpowiedzi")
-
-    def test_invalid_access_code_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'choice': open_question.choice_set.all().last().id,
-                  'new_choice': '',
-                  'code': ""})
-        basic_check_of_open_question(
-            self, response, open_question, "Niewłaściwy kod uwierzytelniający")
 
 
 class OpenQuestionTests(TestCase):

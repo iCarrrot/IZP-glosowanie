@@ -5,6 +5,9 @@
 <div class="col-sm-3">
     <form action="{% url 'polls:vote' question.id %}" method="post">
         {% csrf_token %} 
+        {% block chooseAnswr%}
+        <label for="radio" id="people_header">Proszę wybrać jedną z dostępnych propozycji:</label>
+        {% endblock %}
         {% for choice in question.choice_set.all %}
         <div class="radio">
             <label>
@@ -13,6 +16,8 @@
             </label>
         </div>
         {% endfor %} 
+        {% block openQuestion %}
+        {% endblock %}
         <div class="form-group">
             <label for="code">
                 Kod dostępu:

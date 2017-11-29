@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
-from .employers import employers_iterator
+from .employers import employers
 from .models import AccessCode, Choice, Question, Vote, \
     OpenQuestion, PeopleQuestion
 
@@ -26,7 +26,7 @@ def detail(request, question_id):
         return render(request, 'polls/OpenDetail.html',
                       {'question': peopleQuestion,
                        'peopleQ': True,
-                       'employers': employers_iterator()})
+                       'employers': employers})
     elif OpenQuestion.objects.filter(pk=question_id).exists():
         openQuestion = OpenQuestion.objects.get(pk=question_id)
         return render(request, 'polls/OpenDetail.html',
