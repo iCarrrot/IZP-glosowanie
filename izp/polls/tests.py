@@ -24,9 +24,9 @@ def basic_check_of_open_question(cls, response, quest, error=""):
     cls.assertContains(response, 'new_choice')
 
 
-class QuestionIndexViewTests(TestCase):
+class PollDetailViewTests(TestCase):
     """
-    Tests for views
+    Tests for Poll detail view
     """
 
     def test_no_questions(self):
@@ -40,135 +40,40 @@ class QuestionIndexViewTests(TestCase):
         self.assertContains(response, "Brak pytań!")
         self.assertQuerysetEqual(response.context['questions_list'], [])
 
-    def test_past_question(self):
+    def test_one_question(self):
         """
-        Questions with a start_date in the past are displayed on the
-        index page.
+        The questions index view lists one question
         """
-        past_time = timezone.now() + datetime.timedelta(days=-30)
         poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Past question",
-                                start_date=past_time)
+        Question.objects.create(poll=poll, question_text="Question")
         response = self.client.get(reverse('polls:poll_detail',
                                            args=(poll.id,)))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Past question>']
+            ['<Question: Question>']
         )
 
-    def test_question_with_same_start_and_end_time(self):
+    def test_multiple_question(self):
         """
-        Questions with a start_date which is equal to end_date should not be
-        displayed.
+        The questions index view lists many questions.
         """
-        now_time = timezone.now()
         poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Past question",
-                                start_date=now_time, end_date=now_time)
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Brak pytań!")
-        self.assertQuerysetEqual(response.context['questions_list'], [])
-
-    def test_future_question(self):
-        """
-        Questions with a start_date in the future are displayed on the index
-        page.
-        """
-        future_time = timezone.now() + datetime.timedelta(days=30)
-        poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Future question",
-                                start_date=future_time)
+        Question.objects.create(poll=poll, question_text="Question 1")
+        Question.objects.create(poll=poll, question_text="Question 2")
+        Question.objects.create(poll=poll, question_text="Question 3")
         response = self.client.get(reverse('polls:poll_detail',
                                            args=(poll.id,)))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Future question>']
-        )
-
-    def test_future_question_and_past_question(self):
-        """
-        If both past and future questions exist, both are display.
-        """
-        past_time = timezone.now() + datetime.timedelta(days=-30)
-        future_time = timezone.now() + datetime.timedelta(days=30)
-        poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Past question",
-                                start_date=past_time)
-        Question.objects.create(poll=poll, question_text="Future question",
-                                start_date=future_time)
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Future question>', '<Question: Past question>']
-        )
-
-    def test_two_past_questions(self):
-        """
-        The questions index page may display multiple questions.
-        """
-        past_time1 = timezone.now() + datetime.timedelta(days=-30)
-        past_time2 = timezone.now() + datetime.timedelta(days=-5)
-        poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Past question 1",
-                                start_date=past_time1)
-        Question.objects.create(poll=poll, question_text="Past question 2",
-                                start_date=past_time2)
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Past question 2>', '<Question: Past question 1>']
-        )
-
-    def test_long_time_questions(self):
-        """
-        The questions index page may display long time questions.
-        """
-        future_time1 = timezone.now() + datetime.timedelta(days=30)
-        future_time2 = timezone.now() + datetime.timedelta(days=5)
-        poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Question 1",
-                                start_date=future_time1)
-        Question.objects.create(poll=poll, question_text="Question 2",
-                                start_date=future_time2)
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Question 1>',
-             '<Question: Question 2>']
-        )
-
-    def test_short_time_questions(self):
-        """
-        The questions index page may display short time questions.
-        """
-        time1 = timezone.now() + datetime.timedelta(minutes=6)
-        time2 = timezone.now() + datetime.timedelta(minutes=3)
-        time3 = timezone.now() + datetime.timedelta(minutes=5)
-        poll = Poll.objects.create()
-        Question.objects.create(poll=poll, question_text="Question 1",
-                                start_date=timezone.now(), end_date=time1)
-        Question.objects.create(poll=poll, question_text="Question 2",
-                                start_date=timezone.now(), end_date=time2)
-        Question.objects.create(poll=poll, question_text="Question 3",
-                                start_date=timezone.now(), end_date=time3)
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Question 1>',
-             '<Question: Question 3>',
-             '<Question: Question 2>']
+            ['<Question: Question 3>',
+             '<Question: Question 2>',
+             '<Question: Question 1>']
         )
 
 
 class QuestionDetailViewTests(TestCase):
     """
-    Tests of polls details
+    Tests for Question detail view
     """
 
     def test_future_question(self):
