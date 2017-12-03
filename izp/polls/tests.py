@@ -182,7 +182,7 @@ class QuestionDetailViewTests(TestCase):
 
         future_question = create_question(
             question_text='Future question.', days=5)
-        url = reverse('polls:detail', args=(future_question.id,))
+        url = reverse('polls:question_detail', args=(future_question.id,))
         response = self.client.get(url)
         self.assertContains(response, future_question.question_text)
         self.assertContains(response, "Głosowanie nie jest aktywne")
@@ -194,7 +194,7 @@ class QuestionDetailViewTests(TestCase):
         """
         past_question = create_question(
             question_text='Past Question.', days=-5)
-        url = reverse('polls:detail', args=(past_question.id,))
+        url = reverse('polls:question_detail', args=(past_question.id,))
         response = self.client.get(url)
         self.assertContains(response, past_question.question_text)
         self.assertContains(response, "Głosowanie nie jest aktywne")
@@ -207,13 +207,13 @@ class QuestionDetailViewTests(TestCase):
 
         future_question = create_question(
             question_text='Future question.', days=5)
-        url = reverse('polls:detail', args=(future_question.id,))
+        url = reverse('polls:question_detail', args=(future_question.id,))
         future_response = self.client.get(url)
         self.assertContains(future_response, "Głosowanie nie jest aktywne")
 
         past_question = create_question(
             question_text='Past question.', days=-5)
-        url = reverse('polls:detail', args=(past_question.id,))
+        url = reverse('polls:question_detail', args=(past_question.id,))
         past_response = self.client.get(url)
         self.assertContains(past_response, "Głosowanie nie jest aktywne")
 
@@ -221,7 +221,7 @@ class QuestionDetailViewTests(TestCase):
             question_text='current question.',
             start=timezone.now(),
             end=timezone.now() + datetime.timedelta(minutes=5))
-        url = reverse('polls:detail', args=(current_question.id,))
+        url = reverse('polls:question_detail', args=(current_question.id,))
         current_response = self.client.get(url)
         self.assertNotContains(current_response, "Głosowanie nie jest aktywne")
 
@@ -247,7 +247,7 @@ class OpenQuestionDetailViewTests(TestCase):
         Test for detail view of open question
         '''
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:detail', args=(open_question.id,))
+        url = reverse('polls:question_detail', args=(open_question.id,))
         response = self.client.get(url)
         basic_check_of_open_question(self, response, open_question)
 
@@ -256,7 +256,7 @@ class OpenQuestionDetailViewTests(TestCase):
         Test for detail view of empty open question
         '''
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:detail', args=(open_question.id,))
+        url = reverse('polls:question_detail', args=(open_question.id,))
         response = self.client.get(url)
         self.assertContains(response, open_question.question_text)
         self.assertContains(response, 'new_choice')
