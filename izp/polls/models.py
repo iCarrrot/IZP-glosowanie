@@ -4,6 +4,10 @@ from .codes import generate_codes
 
 
 class Question(models.Model):
+    """
+    Base class representing question in the poll.
+    """
+
     question_text = models.CharField('Pytanie', max_length=200)
     start_date = models.DateTimeField(
         'Data rozpoczęcia', blank=True, default=timezone.now)
@@ -52,6 +56,10 @@ class Question(models.Model):
 
 
 class SimpleQuestion(Question):
+    """
+    Question with predefined answers Tak and Nie.
+    """
+
     def save(self, force_insert=False, force_update=False, using=None):
         super(SimpleQuestion, self).save(force_insert=force_insert,
                                          force_update=force_update,
@@ -62,6 +70,10 @@ class SimpleQuestion(Question):
 
 
 class OpenQuestion(Question):
+    """
+    Question to which voter may add new choice.
+    """
+
     ...
 
 
@@ -70,6 +82,10 @@ class PeopleQuestion(OpenQuestion):
 
 
 class Choice(models.Model):
+    """
+    Class representing answer to a question.
+    """
+
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField('Odpowiedź', max_length=200)
     votes = models.IntegerField('Liczba głosów', default=0)
@@ -79,6 +95,10 @@ class Choice(models.Model):
 
 
 class AccessCode(models.Model):
+    """
+    Class representing code used to gain access to the question.
+    """
+
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     code = models.CharField('Kod', max_length=8)
     counter = models.IntegerField('Liczba użyć', default=0)
@@ -88,6 +108,10 @@ class AccessCode(models.Model):
 
 
 class Vote(models.Model):
+    """
+    Class representing single vote.
+    """
+
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
     code = models.ForeignKey(AccessCode, on_delete=models.CASCADE)
