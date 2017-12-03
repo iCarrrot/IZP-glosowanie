@@ -358,43 +358,6 @@ class OpenQuestionVoteViewTests(TestCase):
                 count1 = count1 + 1
         self.assertIs(count1, 2)
 
-    def test_two_answers_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'choice': open_question.choice_set.all().last().id,
-                  'new_choice': "sth",
-                  'code': open_question.get_codes()[0]})
-        basic_check_of_open_question(
-            self,
-            response,
-            open_question,
-            "Nie można głosować na istniejącą odpowiedź i \
-                          jednocześnie proponować nową")
-
-    def test_no_answers_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'new_choice': '',
-                  'code': open_question.get_codes()[0]})
-        basic_check_of_open_question(
-            self, response, open_question, "Nie wybrano odpowiedzi")
-
-    def test_invalid_access_code_for_open_question(self):
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'choice': open_question.choice_set.all().last().id,
-                  'new_choice': '',
-                  'code': ""})
-        basic_check_of_open_question(
-            self, response, open_question, "Niewłaściwy kod uwierzytelniający")
-
-
 
 class OpenQuestionTests(TestCase):
     def test_creating_open_question(self):
