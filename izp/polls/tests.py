@@ -283,6 +283,52 @@ class OpenQuestionVoteViewTests(TestCase):
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
+    def test_vote_same_open_answer_twice(self):
+        """
+        If the same open answer is written twice in two votes,
+        it counts as one answer with two votes.
+        """
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(open_question.id,))
+        password = open_question.get_codes()[0]
+        response = self.client.post(
+            url, {'is_open': True,
+                  'code': password,
+                  'new_choice': 'odpowiedz'})
+        password = open_question.get_codes()[1]
+        response = self.client.post(
+            url, {'is_open': True,
+                  'code': password,
+                  'new_choice': 'odpowiedz'})
+        count2 = 0
+        for c in open_question.choice_set.all():
+            if c.votes == 2:
+                count2 = count2 + 1
+        self.assertIs(count2, 1)
+
+    def test_vote_two_similar_answers(self):
+        """
+        If two similar but not the same open answers are written in two votes,
+        it counts as two different answers with one vote each.
+        """
+        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(open_question.id,))
+        password = open_question.get_codes()[0]
+        response = self.client.post(
+            url, {'is_open': True,
+                  'code': password,
+                  'new_choice': 'odpowiedz2'})
+        password = open_question.get_codes()[1]
+        response = self.client.post(
+            url, {'is_open': True,
+                  'code': password,
+                  'new_choice': 'odpowiedz'})
+        count1 = 0
+        for c in open_question.choice_set.all():
+            if c.votes == 1:
+                count1 = count1 + 1
+        self.assertIs(count1, 2)
+
     def test_two_answers_for_open_question(self):
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
         url = reverse('polls:vote', args=(open_question.id,))
