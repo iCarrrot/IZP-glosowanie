@@ -236,8 +236,9 @@ class QuestionDetailViewTests(TestCase):
 
 class OpenQuestionDetailViewTests(TestCase):
     def setUp(self):
+        poll = create_poll("test-poll")
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
@@ -263,15 +264,15 @@ class OpenQuestionDetailViewTests(TestCase):
 
 class QuestionVoteViewTests(TestCase):
     def setUp(self):
-        question = Question.objects.create(
-            question_text="Question")
+        question = create_question("Question")
         question.choice_set.create(choice_text="Odp1")
         question.choice_set.create(choice_text="Odp2")
 
     def test_no_answer_for_question(self):
         question = Question.objects.get(question_text="Question")
         url = reverse('polls:vote', args=(question.id,))
-        response = self.client.post(url, {'code': question.get_codes()[0]})
+        response = self.client.post(url,
+                                    {'code': question.poll.get_codes()[0]})
         basic_check_of_question(self, response, question,
                                 "Nie wybrano odpowiedzi")
 
@@ -288,8 +289,9 @@ class QuestionVoteViewTests(TestCase):
 
 class OpenQuestionVoteViewTests(TestCase):
     def setUp(self):
+        poll = create_poll("test-poll")
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
@@ -300,7 +302,7 @@ class OpenQuestionVoteViewTests(TestCase):
             url, {'is_open': True,
                   'choice': open_question.choice_set.all().last().id,
                   'new_choice': "sth",
-                  'code': open_question.get_codes()[0]})
+                  'code': open_question.poll.get_codes()[0]})
         basic_check_of_open_question(
             self,
             response,
@@ -314,7 +316,7 @@ class OpenQuestionVoteViewTests(TestCase):
         response = self.client.post(
             url, {'is_open': True,
                   'new_choice': '',
-                  'code': open_question.get_codes()[0]})
+                  'code': open_question.poll.get_codes()[0]})
         basic_check_of_open_question(
             self, response, open_question, "Nie wybrano odpowiedzi")
 
@@ -332,8 +334,9 @@ class OpenQuestionVoteViewTests(TestCase):
 
 class OpenQuestionTests(TestCase):
     def test_creating_open_question(self):
+        poll = create_poll("test-poll")
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
         self.assertIs(len(open_question.choice_set.all()), 2)
@@ -342,13 +345,13 @@ class OpenQuestionTests(TestCase):
             'Odp1' in open_question and 'Odp2' in open_question, True)
 
     def test_creating_empty_open_question(self):
+        poll = create_poll("test-poll")
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         self.assertIs(len(open_question.choice_set.all()), 0)
 
 
 class SimpleQuestionTests(TestCase):
-
     def test_choices_count(self):
         poll = create_poll("test-poll")
         q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
@@ -368,6 +371,41 @@ class SimpleQuestionTests(TestCase):
         q.save()
         for choice in q.choice_set.all():
             self.assertIs(choice.votes, 0)
+
+
+class PollTests(TestCase):
+    def test_contains_codes(self):
+        poll = create_poll("test-poll")
+        codes = poll.get_codes()
+        self.assertTrue(codes)
+        self.assertEqual(len(codes), 82)
+        self.assertEqual(len(codes[0]), 8)
+
+    def test_is_code_correct(self):
+        poll = create_poll("test-poll")
+        codes = poll.get_codes()
+        for code in codes:
+            self.assertTrue(poll.is_code_correct(code))
+
+    def test_adding_question(self):
+        poll = create_poll("test-poll")
+        question = Question.objects.create(
+            poll=poll, question_text="test-question")
+        self.assertIn(question, poll.question_set.all())
+
+    def test_adding_simple_question(self):
+        poll = create_poll("test-poll")
+        question = SimpleQuestion.objects.create(
+            poll=poll, question_text="test-question")
+        question_names = map(str, poll.question_set.all())
+        self.assertIn(str(question), question_names)
+
+    def test_adding_open_question(self):
+        poll = create_poll("test-poll")
+        question = OpenQuestion.objects.create(
+            poll=poll, question_text="test-question")
+        question_names = map(str, poll.question_set.all())
+        self.assertIn(str(question), question_names)
 
 
 class CodesTests(TestCase):
@@ -406,7 +444,7 @@ class CodesViewsTests(TestCase):
             'pswd',
         )
 
-        self.q = Question.objects.create(question_text="question 1.")
+        self.q = create_question(question_text="question 1.")
 
     def test_codes_html_view_as_superuser(self):
         self.client.login(username="user1", password="pswd")
@@ -414,7 +452,7 @@ class CodesViewsTests(TestCase):
                                follow=True)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(
-            len(resp.context['codes_list']) == len(self.q.get_codes()))
+            len(resp.context['codes_list']) == len(self.q.poll.get_codes()))
         self.client.logout()
 
     def test_codes_pdf_view_as_superuser(self):
@@ -423,7 +461,7 @@ class CodesViewsTests(TestCase):
                                follow=True)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(
-            len(resp.context['codes_list']) == len(self.q.get_codes()))
+            len(resp.context['codes_list']) == len(self.q.poll.get_codes()))
         self.client.logout()
 
     def test_codes_html_view_as_user(self):
