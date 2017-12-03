@@ -5,28 +5,10 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
-from .models import Question, SimpleQuestion, OpenQuestion
+from .models import Question, SimpleQuestion, OpenQuestion, Poll
 from .codes import generate_codes
 from django.contrib.auth.models import User
 from .views import reformat_code, format_codes_list
-
-
-def create_question(question_text, days=0, start=0, end=0):
-    """
-    Create a question with the given `question_text` and published the
-    given number of `days` offset to now (negative for questions published
-    in the past, positive for questions that have yet to be published).
-    """
-    if days != 0 and start == 0 and end == 0:
-        start = timezone.now() + datetime.timedelta(days=days)
-        return Question.objects.create(
-            question_text=question_text, start_date=start)
-    if days != 0 and start != 0 and end == 0:
-        end = start + datetime.timedelta(days=days)
-        return Question.objects.create(
-            question_text=question_text, start_date=start, end_date=end)
-    return Question.objects.create(
-        question_text=question_text, start_date=start, end_date=end)
 
 
 def basic_check_of_question(cls, response, quest, error=""):
@@ -42,126 +24,56 @@ def basic_check_of_open_question(cls, response, quest, error=""):
     cls.assertContains(response, 'new_choice')
 
 
-class QuestionIndexViewTests(TestCase):
+class PollDetailViewTests(TestCase):
     """
-    Tests for views
+    Tests for Poll detail view
     """
 
     def test_no_questions(self):
         """
         If no questions exist, an appropriate message is displayed.
         """
-        response = self.client.get(reverse('polls:index'))
+        poll = Poll.objects.create()
+        response = self.client.get(reverse('polls:poll_detail',
+                                           args=(poll.id,)))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Brak ankiet!")
+        self.assertContains(response, "Brak pytań!")
         self.assertQuerysetEqual(response.context['questions_list'], [])
 
-    def test_past_question(self):
+    def test_one_question(self):
         """
-        Questions with a start_date in the past are displayed on the
-        index page.
+        The questions index view lists one question
         """
-        create_question(question_text="Past question.", days=-30)
-        response = self.client.get(reverse('polls:index'))
+        poll = Poll.objects.create()
+        Question.objects.create(poll=poll, question_text="Question")
+        response = self.client.get(reverse('polls:poll_detail',
+                                           args=(poll.id,)))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Past question.>']
+            ['<Question: Question>']
         )
 
-    def test_question_with_same_start_and_end_time(self):
+    def test_multiple_question(self):
         """
-        Questions with a start_date which is equal to end_date should not be
-        displayed.
+        The questions index view lists many questions.
         """
-        time = timezone.now()
-        create_question(question_text="Current question.",
-                        start=time, end=time)
-        response = self.client.get(reverse('polls:index'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Brak ankiet!")
-        self.assertQuerysetEqual(response.context['questions_list'], [])
-
-    def test_future_question(self):
-        """
-        Questions with a start_date in the future are displayed on the index
-        page.
-        """
-        create_question(question_text="Future question.", days=30)
-        response = self.client.get(reverse('polls:index'))
+        poll = Poll.objects.create()
+        Question.objects.create(poll=poll, question_text="Question 1")
+        Question.objects.create(poll=poll, question_text="Question 2")
+        Question.objects.create(poll=poll, question_text="Question 3")
+        response = self.client.get(reverse('polls:poll_detail',
+                                           args=(poll.id,)))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Future question.>']
-        )
-
-    def test_future_question_and_past_question(self):
-        """
-        If both past and future questions exist, both are display.
-        """
-        create_question(question_text="Past question.", days=-30)
-        create_question(question_text="Future question.", days=30)
-        response = self.client.get(reverse('polls:index'))
-
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Future question.>', '<Question: Past question.>']
-        )
-
-    def test_two_past_questions(self):
-        """
-        The questions index page may display multiple questions.
-        """
-        create_question(question_text="Past question 1.", days=-30)
-        create_question(question_text="Past question 2.", days=-5)
-        response = self.client.get(reverse('polls:index'))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Past question 2.>', '<Question: Past question 1.>']
-        )
-
-    def test_long_time_questions(self):
-        """
-        The questions index page may display long time questions.
-        """
-        create_question(question_text="Long time question 1.",
-                        start=timezone.now(), days=30)
-        create_question(question_text="Long time question 2.",
-                        start=timezone.now(), days=5)
-        response = self.client.get(reverse('polls:index'))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Long time question 1.>',
-             '<Question: Long time question 2.>']
-        )
-
-    def test_short_time_questions(self):
-        """
-        The questions index page may display short time questions.
-        """
-        create_question(
-            question_text="Short time question 1.",
-            start=timezone.now(),
-            end=timezone.now() + datetime.timedelta(minutes=6))
-        create_question(
-            question_text="Short time question 2.",
-            start=timezone.now(),
-            end=timezone.now() + datetime.timedelta(minutes=3))
-        create_question(
-            question_text="Short time question 3.",
-            start=timezone.now(),
-            end=timezone.now() + datetime.timedelta(minutes=5))
-
-        response = self.client.get(reverse('polls:index'))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Short time question 1.>',
-             '<Question: Short time question 3.>',
-             '<Question: Short time question 2.>']
+            ['<Question: Question 3>',
+             '<Question: Question 2>',
+             '<Question: Question 1>']
         )
 
 
 class QuestionDetailViewTests(TestCase):
     """
-    Tests of polls details
+    Tests for Question detail view
     """
 
     def test_future_question(self):
@@ -169,12 +81,12 @@ class QuestionDetailViewTests(TestCase):
         The detail view of a question with a start_date in the future display
         question and warning, that voting is inactive.
         """
-
-        future_question = create_question(
-            question_text='Future question.', days=5)
-        url = reverse('polls:detail', args=(future_question.id,))
+        future_time = timezone.now() + datetime.timedelta(days=5)
+        poll = Poll.objects.create()
+        question = Question.objects.create(poll=poll, start_date=future_time)
+        url = reverse('polls:question_detail', args=(question.id,))
         response = self.client.get(url)
-        self.assertContains(response, future_question.question_text)
+        self.assertContains(response, question.question_text)
         self.assertContains(response, "Głosowanie nie jest aktywne")
 
     def test_past_question(self):
@@ -182,11 +94,12 @@ class QuestionDetailViewTests(TestCase):
         The detail view of a question with a start_date in the past display
         question and warning, that voting is inactive.
         """
-        past_question = create_question(
-            question_text='Past Question.', days=-5)
-        url = reverse('polls:detail', args=(past_question.id,))
+        past_time = timezone.now() + datetime.timedelta(days=-5)
+        poll = Poll.objects.create()
+        question = Question.objects.create(poll=poll, start_date=past_time)
+        url = reverse('polls:question_detail', args=(question.id,))
         response = self.client.get(url)
-        self.assertContains(response, past_question.question_text)
+        self.assertContains(response, question.question_text)
         self.assertContains(response, "Głosowanie nie jest aktywne")
 
     def test_future_current_and_past_question(self):
@@ -194,40 +107,44 @@ class QuestionDetailViewTests(TestCase):
         Even if past, current and future questions exist, only current
         questions are able to vote.
         """
-
-        future_question = create_question(
-            question_text='Future question.', days=5)
-        url = reverse('polls:detail', args=(future_question.id,))
+        poll = Poll.objects.create()
+        future_q = Question.objects.create(
+            poll=poll, question_text='Future question',
+            start_date=timezone.now() + datetime.timedelta(days=5))
+        url = reverse('polls:question_detail', args=(future_q.id,))
         future_response = self.client.get(url)
         self.assertContains(future_response, "Głosowanie nie jest aktywne")
 
-        past_question = create_question(
-            question_text='Past question.', days=-5)
-        url = reverse('polls:detail', args=(past_question.id,))
+        past_q = Question.objects.create(
+            poll=poll, question_text='Past question',
+            start_date=timezone.now() + datetime.timedelta(days=-5))
+        url = reverse('polls:question_detail', args=(past_q.id,))
         past_response = self.client.get(url)
         self.assertContains(past_response, "Głosowanie nie jest aktywne")
 
-        current_question = create_question(
-            question_text='current question.',
-            start=timezone.now(),
-            end=timezone.now() + datetime.timedelta(minutes=5))
-        url = reverse('polls:detail', args=(current_question.id,))
+        current_q = Question.objects.create(
+            poll=poll, question_text='Current question',
+            start_date=timezone.now(),
+            end_date=timezone.now() + datetime.timedelta(minutes=5))
+        url = reverse('polls:question_detail', args=(current_q.id,))
         current_response = self.client.get(url)
         self.assertNotContains(current_response, "Głosowanie nie jest aktywne")
 
-        response = self.client.get(reverse('polls:index'))
+        response = self.client.get(reverse('polls:poll_detail',
+                                           args=(poll.id,)))
         self.assertQuerysetEqual(
             response.context['questions_list'],
-            ['<Question: Future question.>',
-             '<Question: current question.>',
-             '<Question: Past question.>']
+            ['<Question: Future question>',
+             '<Question: Current question>',
+             '<Question: Past question>']
         )
 
 
 class OpenQuestionDetailViewTests(TestCase):
     def setUp(self):
+        poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
@@ -236,7 +153,7 @@ class OpenQuestionDetailViewTests(TestCase):
         Test for detail view of open question
         '''
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:detail', args=(open_question.id,))
+        url = reverse('polls:question_detail', args=(open_question.id,))
         response = self.client.get(url)
         basic_check_of_open_question(self, response, open_question)
 
@@ -245,7 +162,7 @@ class OpenQuestionDetailViewTests(TestCase):
         Test for detail view of empty open question
         '''
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:detail', args=(open_question.id,))
+        url = reverse('polls:question_detail', args=(open_question.id,))
         response = self.client.get(url)
         self.assertContains(response, open_question.question_text)
         self.assertContains(response, 'new_choice')
@@ -253,15 +170,16 @@ class OpenQuestionDetailViewTests(TestCase):
 
 class QuestionVoteViewTests(TestCase):
     def setUp(self):
-        question = Question.objects.create(
-            question_text="Question")
+        poll = Poll.objects.create()
+        question = Question.objects.create(poll=poll, question_text='Question')
         question.choice_set.create(choice_text="Odp1")
         question.choice_set.create(choice_text="Odp2")
 
     def test_no_answer_for_question(self):
         question = Question.objects.get(question_text="Question")
         url = reverse('polls:vote', args=(question.id,))
-        response = self.client.post(url, {'code': question.get_codes()[0]})
+        response = self.client.post(url,
+                                    {'code': question.poll.get_codes()[0]})
         basic_check_of_question(self, response, question,
                                 "Nie wybrano odpowiedzi")
 
@@ -276,58 +194,64 @@ class QuestionVoteViewTests(TestCase):
                                 "Niewłaściwy kod uwierzytelniający")
 
 
-class OpenQuestionVoteViewTests(TestCase):
+class ChoiceUniquenessTests(TestCase):
     def setUp(self):
-        open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
-        open_question.choice_set.create(choice_text="Odp1")
-        open_question.choice_set.create(choice_text="Odp2")
+        poll = Poll.objects.create()
+        question = OpenQuestion.objects.create(
+            poll=poll, question_text="OpenQuestion")
+        question.choice_set.create(choice_text="Odp1")
+        question.choice_set.create(choice_text="Odp2")
 
     def test_vote_same_open_answer_twice(self):
         """
         If the same open answer is written twice in two votes,
         it counts as one answer with two votes.
         """
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        password = open_question.get_codes()[0]
+        question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(question.id,))
+        password = question.poll.get_codes()[0]
         response = self.client.post(
             url, {'is_open': True,
                   'code': password,
-                  'new_choice': 'odpowiedz'})
-        password = open_question.get_codes()[1]
+                  'new_choice': 'Odp'})
+        password = question.poll.get_codes()[1]
         response = self.client.post(
             url, {'is_open': True,
                   'code': password,
-                  'new_choice': 'odpowiedz'})
-        count2 = 0
-        for c in open_question.choice_set.all():
-            if c.votes == 2:
-                count2 = count2 + 1
-        self.assertIs(count2, 1)
+                  'new_choice': 'Odp'})
+        self.assertIs(question.choice_set.filter(votes__exact=2).count(), 1)
+        self.assertIs(question.choice_set.filter(votes__exact=0).count(), 2)
+        self.assertIs(question.choice_set.all().count(), 3)
 
     def test_vote_two_similar_answers(self):
         """
         If two similar but not the same open answers are written in two votes,
         it counts as two different answers with one vote each.
         """
-        open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
-        url = reverse('polls:vote', args=(open_question.id,))
-        password = open_question.get_codes()[0]
+        question = OpenQuestion.objects.get(question_text="OpenQuestion")
+        url = reverse('polls:vote', args=(question.id,))
+        password = question.poll.get_codes()[0]
         response = self.client.post(
             url, {'is_open': True,
                   'code': password,
-                  'new_choice': 'odpowiedz2'})
-        password = open_question.get_codes()[1]
+                  'new_choice': 'odp3'})
+        password = question.poll.get_codes()[1]
         response = self.client.post(
             url, {'is_open': True,
                   'code': password,
-                  'new_choice': 'odpowiedz'})
-        count1 = 0
-        for c in open_question.choice_set.all():
-            if c.votes == 1:
-                count1 = count1 + 1
-        self.assertIs(count1, 2)
+                  'new_choice': '3odp'})
+        self.assertIs(question.choice_set.filter(votes__exact=1).count(), 2)
+        self.assertIs(question.choice_set.filter(votes__exact=0).count(), 2)
+        self.assertIs(question.choice_set.all().count(), 4)
+
+
+class OpenQuestionVoteViewTests(TestCase):
+    def setUp(self):
+        poll = Poll.objects.create()
+        open_question = OpenQuestion.objects.create(
+            poll=poll, question_text="OpenQuestion")
+        open_question.choice_set.create(choice_text="Odp1")
+        open_question.choice_set.create(choice_text="Odp2")
 
     def test_two_answers_for_open_question(self):
         open_question = OpenQuestion.objects.get(question_text="OpenQuestion")
@@ -336,7 +260,7 @@ class OpenQuestionVoteViewTests(TestCase):
             url, {'is_open': True,
                   'choice': open_question.choice_set.all().last().id,
                   'new_choice': "sth",
-                  'code': open_question.get_codes()[0]})
+                  'code': open_question.poll.get_codes()[0]})
         basic_check_of_open_question(
             self,
             response,
@@ -350,7 +274,7 @@ class OpenQuestionVoteViewTests(TestCase):
         response = self.client.post(
             url, {'is_open': True,
                   'new_choice': '',
-                  'code': open_question.get_codes()[0]})
+                  'code': open_question.poll.get_codes()[0]})
         basic_check_of_open_question(
             self, response, open_question, "Nie wybrano odpowiedzi")
 
@@ -368,8 +292,9 @@ class OpenQuestionVoteViewTests(TestCase):
 
 class OpenQuestionTests(TestCase):
     def test_creating_open_question(self):
+        poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
         self.assertIs(len(open_question.choice_set.all()), 2)
@@ -378,29 +303,67 @@ class OpenQuestionTests(TestCase):
             'Odp1' in open_question and 'Odp2' in open_question, True)
 
     def test_creating_empty_open_question(self):
+        poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
-            question_text="OpenQuestion")
+            poll=poll, question_text="OpenQuestion")
         self.assertIs(len(open_question.choice_set.all()), 0)
 
 
 class SimpleQuestionTests(TestCase):
-
     def test_choices_count(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = Poll.objects.create()
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         self.assertIs(len(q.choice_set.all()), 2)
 
     def test_choices_content(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = Poll.objects.create()
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         q = map(str, q.choice_set.all())
         self.assertIs('Tak' in q and 'Nie' in q, True)
 
     def test_initial_votes(self):
-        q = SimpleQuestion(question_text="Tak czy nie?")
+        poll = Poll.objects.create()
+        q = SimpleQuestion(poll=poll, question_text="Tak czy nie?")
         q.save()
         for choice in q.choice_set.all():
             self.assertIs(choice.votes, 0)
+
+
+class PollTests(TestCase):
+    def test_contains_codes(self):
+        poll = Poll.objects.create()
+        codes = poll.get_codes()
+        self.assertTrue(codes)
+        self.assertEqual(len(codes), 82)
+        self.assertEqual(len(codes[0]), 8)
+
+    def test_is_code_correct(self):
+        poll = Poll.objects.create()
+        codes = poll.get_codes()
+        for code in codes:
+            self.assertTrue(poll.is_code_correct(code))
+
+    def test_adding_question(self):
+        poll = Poll.objects.create()
+        question = Question.objects.create(
+            poll=poll, question_text="test-question")
+        self.assertIn(question, poll.question_set.all())
+
+    def test_adding_simple_question(self):
+        poll = Poll.objects.create()
+        question = SimpleQuestion.objects.create(
+            poll=poll, question_text="test-question")
+        question_names = map(str, poll.question_set.all())
+        self.assertIn(str(question), question_names)
+
+    def test_adding_open_question(self):
+        poll = Poll.objects.create()
+        question = OpenQuestion.objects.create(
+            poll=poll, question_text="test-question")
+        question_names = map(str, poll.question_set.all())
+        self.assertIn(str(question), question_names)
 
 
 class CodesTests(TestCase):
@@ -411,7 +374,7 @@ class CodesTests(TestCase):
             self.assertEqual(len(code), 10)
 
     def test_codes_characters(self):
-        code = generate_codes(1, 20)[0]
+        code = generate_codes(1, 1000)[0]
         char_base = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         for char in code:
             self.assertIn(char, char_base)
@@ -439,35 +402,38 @@ class CodesViewsTests(TestCase):
             'pswd',
         )
 
-        self.q = Question.objects.create(question_text="question 1.")
+        self.poll = Poll.objects.create()
+        self.q = OpenQuestion.objects.create(poll=self.poll,
+                                             question_text="question 1")
 
     def test_codes_html_view_as_superuser(self):
         self.client.login(username="user1", password="pswd")
-        resp = self.client.get("/polls/" + str(self.q.id) + "/codes/",
-                               follow=True)
-        self.assertEqual(resp.status_code, 200)
+        url = reverse('polls:codes', args=(self.poll.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(
-            len(resp.context['codes_list']) == len(self.q.get_codes()))
+            len(response.context['codes_list']) == len(self.poll.get_codes()))
         self.client.logout()
 
     def test_codes_pdf_view_as_superuser(self):
         self.client.login(username="user1", password="pswd")
-        resp = self.client.get("/polls/" + str(self.q.id) + "/codes_pdf/",
-                               follow=True)
-        self.assertEqual(resp.status_code, 200)
+        url = reverse('polls:codes_pdf', args=(self.poll.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(
-            len(resp.context['codes_list']) == len(self.q.get_codes()))
+            len(response.context['codes_list']) == len(self.poll.get_codes()))
         self.client.logout()
 
     def test_codes_html_view_as_user(self):
-        resp = self.client.get("polls/" + str(self.q.id) + "/codes",
-                               follow=True)
-        self.assertEqual(resp.status_code, 404)
+        url = reverse('polls:codes', args=(self.poll.id,))
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, 404)
 
     def test_codes_pdf_view_as_user(self):
-        resp = self.client.get("polls/" + str(self.q.id) + "/codes_pdf",
-                               follow=True)
-        self.assertEqual(resp.status_code, 404)
+        def test_codes_html_view_as_user(self):
+            url = reverse('polls:codes_pdf', args=(self.poll.id,))
+            response = self.client.get(url, follow=True)
+            self.assertEqual(response.status_code, 404)
 
 
 class ReformatCodeTests(TestCase):
