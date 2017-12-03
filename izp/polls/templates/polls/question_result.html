@@ -1,8 +1,6 @@
 {% extends 'polls/base.html' %}
 {% block content %}
-   
    <h1>{{ question.question_text }}</h1>
-  
    <table class="table table-striped">
       <caption><h3>Wynik głosowania:</h3></caption>
       <thead>
@@ -15,7 +13,7 @@
          {% for choice in choices %}
          <tr>
             <td>{{ choice.choice_text }}</td>
-            <td>{{ choice.votes }}</td> 
+            <td>{{ choice.votes }}</td>
          </tr>
          {% endfor %}
       </tbody>
@@ -35,7 +33,7 @@
          {% for code in codes %}
          <tr>
             <td>{{ code.code }}</td>
-            <td>{{ code.num_of_votes }}</td> 
+            <td>{{ code.num_of_votes }}</td>
             <td>{{ code.last_choice }}</td>
          </tr>
          {% endfor %}

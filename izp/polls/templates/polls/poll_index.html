@@ -1,5 +1,5 @@
 {% extends 'polls/base.html' %}
-{% block content %} 
+{% block content %}
    {% if polls_list %}
    <table class="table table-striped">
       <caption><h3>Lista ankiet</h3></caption>
@@ -16,7 +16,7 @@
             <td><a href="{% url 'polls:poll_detail' poll.id %}">
                   {{poll.poll_name}}</a>
             </td>
-            <td><a href="{% url 'polls:codes' poll.id%}">
+            <td><a href="{% url 'polls:codes' poll.id %}">
                Wyświetl kody</a>
             </td>
             <td><a href="{% url 'polls:codes_pdf' poll.id %}">
@@ -28,7 +28,7 @@
    </table>
    {% else %}
    <div class="text-info" role="alert">
-      <h2>Brak ankiet!</h2> 
+      <h2>Brak ankiet!</h2>
    </div>
    {% endif %}
 {% endblock %}
