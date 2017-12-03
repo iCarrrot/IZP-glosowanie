@@ -103,12 +103,14 @@ def vote(request, question_id):
                 request, 'polls/detail.html',
                 {'question': question, 'error': "Odpowiedź nie istnieje"})
     if not choice and PeopleQuestion.objects.filter(pk=question.pk).exists():
-        try:
-            choice = Choice.objects.get(
-                question__exact=question, choice_text=new_choice)
-        except Exception as e:
+        if not Choice.objects.filter(
+                question__exact=question,
+                choice_text=new_choice).exists():
             choice = Choice.objects.create(
                 question=question, choice_text=new_choice)
+        else:
+            choice = Choice.objects.get(
+                question__exact=question, choice_text=new_choice)
 
     if not choice and is_open:
         choice = Choice.objects.create(
