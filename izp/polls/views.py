@@ -162,15 +162,13 @@ def vote(request, question_id):
 @user_passes_test(lambda u: u.is_superuser)
 def codes(request, poll_id):
     poll = get_object_or_404(Poll, pk=poll_id)
-    question = get_object_or_404(Question, poll__exact=poll)
     return render(request, 'polls/poll_codes_list.html',
-                  {"codes_list": format_codes_list(question.poll.get_codes())})
+                  {"codes_list": format_codes_list(poll.get_codes())})
 
 
 @user_passes_test(lambda u: u.is_superuser)
 def codes_pdf(request, poll_id):
     poll = get_object_or_404(Poll, pk=poll_id)
-    question = get_object_or_404(Question, poll__exact=poll)
     return render_to_pdf_response(
         request, 'polls/poll_codes_list.html',
-        {"codes_list": format_codes_list(question.poll.get_codes())})
+        {"codes_list": format_codes_list(poll.get_codes())})
