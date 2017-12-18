@@ -6,33 +6,56 @@ from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
 from .employers import employers
 from .models import AccessCode, Choice, Question, Vote, \
-    OpenQuestion, PeopleQuestion
+    OpenQuestion, PeopleQuestion, Poll
+
+def poll_index(request):
+    return render(request, 'polls/poll_index.html',
+                  {'polls_list': Poll.objects.all})
 
 
-def index(request):
-    return render(request, 'polls/index.html',
-                  {'questions_list': Question.objects.order_by('-end_date',
-                                                               '-start_date')})
+def poll_detail(request, poll_id):
+    poll = get_object_or_404(Poll, pk=poll_id)
+    is_session = 'poll' + str(poll_id) in request.session
+
+    return render(request, 'polls/poll_detail.html',
+                  {'poll': poll,
+                   'questions_list': Question.objects.filter(
+                       poll__exact=poll).order_by('-end_date', '-start_date'),
+                   'is_session': is_session})
 
 
-def detail(request, question_id):
+def question_detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
+
+    is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
+    is_session = 'poll' + str(question.poll.id) in request.session
+
     if question.start_date > timezone.now() \
        or question.end_date < timezone.now():
-        return render(request, 'polls/detail.html', {
+        return render(request, 'polls/question_detail.html', {
             'question': question, 'error': "Głosowanie nie jest aktywne"})
+
+    if not is_session:
+        return render(request,
+                      'polls/question_detail.html',
+                      {'question': question,
+                       'error': "Użytkownik niezalogowany",
+                       'is_open': is_open,
+                       'is_session': is_session})
+
     if PeopleQuestion.objects.filter(pk=question_id).exists():
         peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/OpenDetail.html',
+        return render(request, 'polls/open_question_detail.html',
                       {'question': peopleQuestion,
                        'peopleQ': True,
-                       'employers': employers})
+                       'employers': employers,
+                       'is_session': is_session})
     elif OpenQuestion.objects.filter(pk=question_id).exists():
         openQuestion = OpenQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/OpenDetail.html',
-                      {'question': openQuestion})
+        return render(request, 'polls/open_question_detail.html',
+                      {'question': openQuestion,'is_session': is_session})
     else:
-        return render(request, 'polls/detail.html', {'question': question})
+        return render(request, 'polls/detail.html', {'question': question,'is_session': is_session})
 
 
 def format_codes_list(codes_list):
@@ -43,19 +66,19 @@ def format_codes_list(codes_list):
 
 
 def format_code(code):
-    return '-'.join([code[i:i+4] for i in range(0, len(code), 4)])
+    return '-'.join([code[i:i + 4] for i in range(0, len(code), 4)])
 
 
-def result(request, question_id):
+def question_result(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     if timezone.now() < question.end_date:
-        return render(request, 'polls/result.html',
+        return render(request, 'polls/question_result.html',
                       {'error': 'Głosowanie jeszcze się nie zakończyło'})
 
     choices = Choice.objects.filter(
         question__exact=question).order_by('-votes')
     codes = []
-    for code in question.accesscode_set.all():
+    for code in question.poll.accesscode_set.all():
         last_choice = Vote.objects.filter(
             question__exact=question, code__exact=code).last()
         if last_choice:
@@ -65,7 +88,7 @@ def result(request, question_id):
         codes.append({'code': format_code(code.code),
                       'num_of_votes': code.counter,
                       'last_choice': last_choice})
-    return render(request, 'polls/result.html',
+    return render(request, 'polls/question_result.html',
                   {'question': question, 'choices': choices, 'codes': codes})
 
 
@@ -75,8 +98,8 @@ def reformat_code(code):
 
     newCode = ""
     for l, c in enumerate(code):
-        if (l+1) % 5 == 0:
-            if l+1 == len(code) or code[l] != "-":
+        if (l + 1) % 5 == 0:
+            if l + 1 == len(code) or code[l] != "-":
                 return ''
         elif code[l] == "-":
             return ''
@@ -85,52 +108,98 @@ def reformat_code(code):
     return newCode
 
 
+def logout(request, poll_id):
+    poll = get_object_or_404(Poll, pk=poll_id)
+
+    if 'poll' + str(poll_id) in request.session:
+        del request.session['poll' + str(poll_id)]
+
+    return HttpResponseRedirect(reverse('polls:poll_detail',
+                                        args=(poll_id,)))
+
+
+def login(request, poll_id):
+    poll = get_object_or_404(Poll, pk=poll_id)
+    code = reformat_code(request.POST['code'])
+
+    if code == '' or not poll.is_code_correct(code):
+        return render(request, 'polls/poll_detail.html',
+                      {'poll': poll,
+                       'questions_list': Question.objects.filter(
+                           poll__exact=poll).order_by('-end_date',
+                                                      '-start_date'),
+                       'is_session': False,
+                       'error': "Niewłaściwy kod uwierzytelniający"
+                       })
+
+    else:
+        request.session['poll' + str(poll_id)] = code
+
+        return HttpResponseRedirect(reverse('polls:poll_detail',
+                                            args=(poll_id,)))
+
+
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
+    is_session = 'poll' + str(question.poll.id) in request.session
+
     if question.start_date > timezone.now() \
        or question.end_date < timezone.now():
         return render(request,
-                      'polls/detail.html',
+                      'polls/question_detail.html',
                       {'question': question,
                        'error': "Głosowanie nie jest aktywne",
-                       'is_open': is_open})
+                       'is_open': is_open,
+                       'is_session': is_session})
 
-    code = request.POST['code']
-    code = reformat_code(code)
-    if code == '' or not question.is_code_correct(code):
+    if is_session:
+        code = request.session['poll' + str(question.poll.id)]
+    else:
         return render(request,
-                      'polls/detail.html',
+                      'polls/question_detail.html',
                       {'question': question,
-                       'error': "Niewłaściwy kod uwierzytelniający",
-                       'is_open': is_open})
+                       'error': "Użytkownik niezalogowany",
+                       'is_open': is_open,
+                       'is_session': is_session})
 
     choice = request.POST.get('choice', None)
     new_choice = request.POST.get('new_choice', '')
     if(choice and new_choice != ''):
         return render(
             request,
-            'polls/detail.html',
+            'polls/question_detail.html',
             {
                 'question': question,
                 'error': "Nie można głosować na istniejącą odpowiedź i \
                           jednocześnie proponować nową",
-                'is_open': is_open})
+                'is_open': is_open,
+                'is_session': is_session})
 
     if not choice and new_choice == '':
-        return render(request, 'polls/detail.html',
+        return render(request, 'polls/question_detail.html',
                       {
                           'question': question,
                           'error': "Nie wybrano odpowiedzi",
-                          'is_open': is_open})
+                          'is_open': is_open,
+                          'is_session': is_session})
 
     if choice:
         if question.choice_set.filter(pk=choice).exists():
             choice = question.choice_set.get(pk=choice)
         else:
-            return render(
-                request, 'polls/detail.html',
-                {'question': question, 'error': "Odpowiedź nie istnieje"})
+            if is_open:
+                return render(
+                    request, 'polls/open_question_detail.html',
+                    {'question': question,
+                     'error': "Odpowiedź nie istnieje",
+                     'is_session': is_session})
+            else:
+                return render(
+                    request, 'polls/detail.html',
+                    {'question': question,
+                     'error': "Odpowiedź nie istnieje",
+                     'is_session': is_session})
     if not choice and PeopleQuestion.objects.filter(pk=question.pk).exists():
         if not Choice.objects.filter(
                 question__exact=question,
@@ -150,7 +219,7 @@ def vote(request, question_id):
             choice = Choice.objects.create(
                 question=question, choice_text=new_choice)
 
-    code = AccessCode.objects.get(question=question, code=code)
+    code = AccessCode.objects.get(poll=question.poll, code=code)
     prev_vote = Vote.objects.filter(
         question__exact=question, code__exact=code).last()
     if prev_vote:
@@ -163,19 +232,20 @@ def vote(request, question_id):
     code.counter += 1
     code.save()
     Vote.objects.create(question=question, choice=choice, code=code)
-    return HttpResponseRedirect(reverse('polls:index'))
+    return HttpResponseRedirect(reverse('polls:poll_detail',
+                                        args=(question.poll.id,)))
 
 
 @user_passes_test(lambda u: u.is_superuser)
-def codes(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/codesList.html',
-                  {"codes_list": format_codes_list(question.get_codes())})
+def codes(request, poll_id):
+    poll = get_object_or_404(Poll, pk=poll_id)
+    return render(request, 'polls/poll_codes_list.html',
+                  {"codes_list": format_codes_list(poll.get_codes())})
 
 
 @user_passes_test(lambda u: u.is_superuser)
-def codes_pdf(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
+def codes_pdf(request, poll_id):
+    poll = get_object_or_404(Poll, pk=poll_id)
     return render_to_pdf_response(
-        request, 'polls/codesList.html',
-        {"codes_list": format_codes_list(question.get_codes())})
+        request, 'polls/poll_codes_list.html',
+        {"codes_list": format_codes_list(poll.get_codes())})

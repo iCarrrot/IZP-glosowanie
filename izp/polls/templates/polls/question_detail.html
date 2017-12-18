@@ -24,7 +24,9 @@
             </label>
             <input id="code" name="code" type="password" class="form-control">
         </div>
+        {% if is_session %}
         <button class="btn btn-primary">Głosuj</button>
+        {% endif %}
     </form>
 </div>
 {% endblock %}
