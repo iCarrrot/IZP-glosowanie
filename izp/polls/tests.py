@@ -5,7 +5,8 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
-from .models import Question, SimpleQuestion, OpenQuestion, PeopleQuestion, Poll
+from .models import Question, SimpleQuestion, OpenQuestion, \
+    PeopleQuestion, Poll
 from .codes import generate_codes
 from django.contrib.auth.models import User
 from .views import reformat_code, format_codes_list
@@ -144,7 +145,8 @@ class QuestionDetailViewTests(TestCase):
         Test for detail view of people question
         """
         poll = Poll.objects.create()
-        question = PeopleQuestion.objects.create(question_text="Question?", poll=poll)
+        question = PeopleQuestion.objects.create(
+            question_text="Question?", poll=poll)
         question.choice_set.create(choice_text="dr Grzegorz Świderski")
         question.choice_set.create(
             choice_text="dr hab. Jean-Marie de Nivelle")
@@ -160,7 +162,8 @@ class QuestionDetailViewTests(TestCase):
         Test for detail view of empty people question
         """
         poll = Poll.objects.create()
-        question = PeopleQuestion.objects.create(question_text="Question?", poll=poll)
+        question = PeopleQuestion.objects.create(
+            question_text="Question?", poll=poll)
         url = reverse('polls:question_detail', args=(question.id,))
         response = self.client.get(url)
         self.assertContains(response, question.question_text)

@@ -8,6 +8,7 @@ from .employers import employers
 from .models import AccessCode, Choice, Question, Vote, \
     OpenQuestion, PeopleQuestion, Poll
 
+
 def poll_index(request):
     return render(request, 'polls/poll_index.html',
                   {'polls_list': Poll.objects.all})
@@ -53,9 +54,10 @@ def question_detail(request, question_id):
     elif OpenQuestion.objects.filter(pk=question_id).exists():
         openQuestion = OpenQuestion.objects.get(pk=question_id)
         return render(request, 'polls/open_question_detail.html',
-                      {'question': openQuestion,'is_session': is_session})
+                      {'question': openQuestion, 'is_session': is_session})
     else:
-        return render(request, 'polls/detail.html', {'question': question,'is_session': is_session})
+        return render(request, 'polls/detail.html',
+                      {'question': question, 'is_session': is_session})
 
 
 def format_codes_list(codes_list):
