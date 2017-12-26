@@ -65,7 +65,8 @@ class PollDetailViewTests(TestCase):
             response.context['questions_list'],
             ['<Question: Question 3>',
              '<Question: Question 2>',
-             '<Question: Question 1>']
+             '<Question: Question 1>'],
+            ordered=False
         )
 
 
@@ -74,68 +75,22 @@ class QuestionDetailViewTests(TestCase):
     Tests for Question detail view
     """
 
-    def test_future_question(self):
-        """
-        The detail view of a question with a start_date in the future display
-        question and warning, that voting is inactive.
-        """
-        future_time = timezone.now() + datetime.timedelta(days=5)
+    def test_active_question(self):
         poll = Poll.objects.create()
-        question = Question.objects.create(poll=poll, start_date=future_time)
+        question = Question.objects.create(poll=poll)
+        question.activate()
+        url = reverse('polls:question_detail', args=(question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, question.question_text)
+        self.assertNotContains(response, "Głosowanie nie jest aktywne")
+
+    def test_inactive_question(self):
+        poll = Poll.objects.create()
+        question = Question.objects.create(poll=poll)
         url = reverse('polls:question_detail', args=(question.id,))
         response = self.client.get(url)
         self.assertContains(response, question.question_text)
         self.assertContains(response, "Głosowanie nie jest aktywne")
-
-    def test_past_question(self):
-        """
-        The detail view of a question with a start_date in the past display
-        question and warning, that voting is inactive.
-        """
-        past_time = timezone.now() + datetime.timedelta(days=-5)
-        poll = Poll.objects.create()
-        question = Question.objects.create(poll=poll, start_date=past_time)
-        url = reverse('polls:question_detail', args=(question.id,))
-        response = self.client.get(url)
-        self.assertContains(response, question.question_text)
-        self.assertContains(response, "Głosowanie nie jest aktywne")
-
-    def test_future_current_and_past_question(self):
-        """
-        Even if past, current and future questions exist, only current
-        questions are able to vote.
-        """
-        poll = Poll.objects.create()
-        future_q = Question.objects.create(
-            poll=poll, question_text='Future question',
-            start_date=timezone.now() + datetime.timedelta(days=5))
-        url = reverse('polls:question_detail', args=(future_q.id,))
-        future_response = self.client.get(url)
-        self.assertContains(future_response, "Głosowanie nie jest aktywne")
-
-        past_q = Question.objects.create(
-            poll=poll, question_text='Past question',
-            start_date=timezone.now() + datetime.timedelta(days=-5))
-        url = reverse('polls:question_detail', args=(past_q.id,))
-        past_response = self.client.get(url)
-        self.assertContains(past_response, "Głosowanie nie jest aktywne")
-
-        current_q = Question.objects.create(
-            poll=poll, question_text='Current question',
-            start_date=timezone.now(),
-            end_date=timezone.now() + datetime.timedelta(minutes=5))
-        url = reverse('polls:question_detail', args=(current_q.id,))
-        current_response = self.client.get(url)
-        self.assertNotContains(current_response, "Głosowanie nie jest aktywne")
-
-        response = self.client.get(reverse('polls:poll_detail',
-                                           args=(poll.id,)))
-        self.assertQuerysetEqual(
-            response.context['questions_list'],
-            ['<Question: Future question>',
-             '<Question: Current question>',
-             '<Question: Past question>']
-        )
 
 
 class OpenQuestionDetailViewTests(TestCase):
@@ -143,6 +98,7 @@ class OpenQuestionDetailViewTests(TestCase):
         poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
             poll=poll, question_text="OpenQuestion")
+        open_question.activate()
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
@@ -169,7 +125,9 @@ class OpenQuestionDetailViewTests(TestCase):
 class QuestionVoteViewTests(TestCase):
     def setUp(self):
         poll = Poll.objects.create()
-        question = Question.objects.create(poll=poll, question_text='Question')
+        question = Question.objects.create(
+            poll=poll, question_text='Question')
+        question.activate()
         question.choice_set.create(choice_text="Odp1")
         question.choice_set.create(choice_text="Odp2")
 
@@ -191,6 +149,7 @@ class OpenQuestionVoteViewTests(TestCase):
         poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
             poll=poll, question_text="OpenQuestion")
+        open_question.activate()
         open_question.choice_set.create(choice_text="Odp1")
         open_question.choice_set.create(choice_text="Odp2")
 
