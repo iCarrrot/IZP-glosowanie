@@ -195,7 +195,7 @@ def vote(request, question_id):
         if question.choice_set.filter(pk=choice).exists():
             choice = question.choice_set.get(pk=choice)
         else:
-            if is_open:
+            if is_open or is_peopleQ:
                 return render(
                     request, 'polls/question_detail.html',
                     {'question': question,
@@ -219,7 +219,7 @@ def vote(request, question_id):
             choice = Choice.objects.get(
                 question__exact=question, choice_text=new_choice)
 
-    if not choice and is_open:
+    if not choice and (is_open or is_peopleQ):
         if Choice.objects.filter(question__exact=question,
                                  choice_text__exact=new_choice).exists():
             choice = Choice.objects.filter(
