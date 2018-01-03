@@ -5,7 +5,8 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
-from polls.models import Question, SimpleQuestion, OpenQuestion, Poll
+from polls.models import Question, SimpleQuestion, OpenQuestion, \
+    PeopleQuestion, Poll
 from django.contrib.auth.models import User
 
 
@@ -122,6 +123,37 @@ class OpenQuestionDetailViewTests(TestCase):
         self.assertContains(response, 'new_choice')
 
 
+class PeopleQuestionDetailViewTests(TestCase):
+    def setUp(self):
+        poll = Poll.objects.create()
+        people_question = PeopleQuestion.objects.create(
+            poll=poll, question_text="PeopleQuestion")
+        people_question.activate()
+        people_question.choice_set.create(choice_text="Odp1")
+        people_question.choice_set.create(choice_text="Odp2")
+
+    def test_people_question_with_choices(self):
+        '''
+        Test for detail view of open question
+        '''
+        people_question = PeopleQuestion.objects.get(
+            question_text="PeopleQuestion")
+        url = reverse('polls:question_detail', args=(people_question.id,))
+        response = self.client.get(url)
+        basic_check_of_open_question(self, response, people_question)
+
+    def test_people_question_without_choices(self):
+        '''
+        Test for detail view of empty open question
+        '''
+        people_question = PeopleQuestion.objects.get(
+            question_text="PeopleQuestion")
+        url = reverse('polls:question_detail', args=(people_question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, people_question.question_text)
+        self.assertContains(response, 'new_choice')
+
+
 class QuestionVoteViewTests(TestCase):
     def setUp(self):
         poll = Poll.objects.create()
@@ -182,6 +214,48 @@ class OpenQuestionVoteViewTests(TestCase):
                                               + str(open_question.poll.id)]})
         basic_check_of_open_question(
             self, response, open_question, "Nie wybrano odpowiedzi")
+
+
+class PeopleQuestionVoteViewTests(TestCase):
+    def setUp(self):
+        poll = Poll.objects.create()
+        people_question = PeopleQuestion.objects.create(
+            poll=poll, question_text="PeopleQuestion")
+        people_question.activate()
+        people_question.choice_set.create(choice_text="Odp1")
+        people_question.choice_set.create(choice_text="Odp2")
+
+        s = self.client.session
+        s['poll' + str(people_question.poll.id)] = poll.get_codes()[0]
+        s.save()
+
+    def test_two_answers_for_people_question(self):
+        people_question = PeopleQuestion.objects.get(
+            question_text="PeopleQuestion")
+        url = reverse('polls:vote', args=(people_question.id,))
+        response = self.client.post(
+            url, {'is_open': True,
+                  'choice': people_question.choice_set.all().last().id,
+                  'new_choice': "sth"})
+
+        basic_check_of_open_question(
+            self,
+            response,
+            people_question,
+            "Nie można głosować na istniejącą odpowiedź i \
+                          jednocześnie proponować nową")
+
+    def test_no_answers_for_people_question(self):
+        people_question = PeopleQuestion.objects.get(
+            question_text="PeopleQuestion")
+        url = reverse('polls:vote', args=(people_question.id,))
+        response = self.client.post(
+            url, {'is_open': True,
+                  'new_choice': '',
+                  'code': self.client.session['poll'
+                                              + str(people_question.poll.id)]})
+        basic_check_of_open_question(
+            self, response, people_question, "Nie wybrano odpowiedzi")
 
 
 class CodesViewsTests(TestCase):

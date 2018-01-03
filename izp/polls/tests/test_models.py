@@ -3,7 +3,8 @@ Tests for models
 """
 from django.test import TestCase
 from django.urls import reverse
-from polls.models import Question, SimpleQuestion, OpenQuestion, Poll
+from polls.models import Question, SimpleQuestion, OpenQuestion, \
+    PeopleQuestion, Poll
 
 
 class ChoiceUniquenessTests(TestCase):
@@ -94,6 +95,26 @@ class OpenQuestionTests(TestCase):
         open_question = OpenQuestion.objects.create(
             poll=poll, question_text="OpenQuestion")
         self.assertIs(len(open_question.choice_set.all()), 0)
+
+
+class PeopleQuestionTests(TestCase):
+
+    def test_creating_people_question(self):
+        poll = Poll.objects.create()
+        people_question = PeopleQuestion.objects.create(
+            poll=poll, question_text="PeopleQuestion")
+        people_question.choice_set.create(choice_text="Odp1")
+        people_question.choice_set.create(choice_text="Odp2")
+        self.assertIs(len(people_question.choice_set.all()), 2)
+        people_question = map(str, people_question.choice_set.all())
+        self.assertIs(
+            'Odp1' in people_question and 'Odp2' in people_question, True)
+
+    def test_creating_empty_people_question(self):
+        poll = Poll.objects.create()
+        people_question = PeopleQuestion.objects.create(
+            poll=poll, question_text="PeopleQuestion")
+        self.assertIs(len(people_question.choice_set.all()), 0)
 
 
 class SimpleQuestionTests(TestCase):

@@ -28,6 +28,7 @@ def question_detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
 
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
+    is_peopleQ = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
 
     if not question.is_active():
@@ -40,19 +41,24 @@ def question_detail(request, question_id):
                       {'question': question,
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
+                       'is_peopleQ': is_peopleQ,
                        'is_session': is_session})
 
     if PeopleQuestion.objects.filter(pk=question_id).exists():
         peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/open_question_detail.html',
+        return render(request, 'polls/question_detail.html',
                       {'question': peopleQuestion,
-                       'peopleQ': True,
+                       'is_open': is_open,
+                       'is_peopleQ': is_peopleQ,
                        'employers': employers,
                        'is_session': is_session})
     elif OpenQuestion.objects.filter(pk=question_id).exists():
         openQuestion = OpenQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/open_question_detail.html',
-                      {'question': openQuestion, 'is_session': is_session})
+        return render(request, 'polls/question_detail.html',
+                      {'question': openQuestion,
+                       'is_session': is_session,
+                       'is_open': is_open,
+                       'is_peopleQ': is_peopleQ, })
     else:
         return render(request, 'polls/detail.html',
                       {'question': question, 'is_session': is_session})
@@ -141,6 +147,7 @@ def login(request, poll_id):
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
+    is_peopleQ = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
 
     if not question.is_active():
@@ -172,6 +179,7 @@ def vote(request, question_id):
                 'error': "Nie można głosować na istniejącą odpowiedź i \
                           jednocześnie proponować nową",
                 'is_open': is_open,
+                'is_peopleQ': is_peopleQ,
                 'is_session': is_session})
 
     if not choice and new_choice == '':
@@ -180,6 +188,7 @@ def vote(request, question_id):
                           'question': question,
                           'error': "Nie wybrano odpowiedzi",
                           'is_open': is_open,
+                          'is_peopleQ': is_peopleQ,
                           'is_session': is_session})
 
     if choice:
@@ -188,9 +197,11 @@ def vote(request, question_id):
         else:
             if is_open:
                 return render(
-                    request, 'polls/open_question_detail.html',
+                    request, 'polls/question_detail.html',
                     {'question': question,
                      'error': "Odpowiedź nie istnieje",
+                     'is_open': is_open,
+                     'is_peopleQ': is_peopleQ,
                      'is_session': is_session})
             else:
                 return render(

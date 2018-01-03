@@ -1,32 +1,43 @@
-{% extends 'polls/base.html' %} 
+{% extends 'polls/base.html' %}
 {% block content %}
-
-<h1>{{ question.question_text }}</h1>
-<div class="col-sm-3">
-    <form action="{% url 'polls:vote' question.id %}" method="post">
-        {% csrf_token %} 
-        {% block chooseAnswr%}
-        <label for="radio" id="people_header">Proszę wybrać jedną z dostępnych propozycji:</label>
-        {% endblock %}
-        {% for choice in question.choice_set.all %}
-        <div class="radio">
-            <label>
-                <input id="{{ choice.id }}" type="radio" name="choice" value="{{ choice.id }}"> 
+   <h1>{{ question.question_text }}</h1>
+   <div class="col-sm-3">
+      <form action="{% url 'polls:vote' question.id %}" method="post">
+      {% csrf_token %}
+         {% for choice in question.choice_set.all %}
+       	 <div class="radio">
+            <label><input id="{{ choice.id }}" type="radio" name="choice" value="{{ choice.id }}">
                 {{ choice.choice_text}}
             </label>
-        </div>
-        {% endfor %} 
-        {% block openQuestion %}
-        {% endblock %}
-        <div class="form-group">
-            <label for="code">
-                Kod dostępu:
+          </div>
+         {% endfor %}
+         {% if is_open %}
+         <div class="form-group">
+            <label for="new_choice">
+                Własna propozycja:
             </label>
-            <input id="code" name="code" type="password" class="form-control">
-        </div>
-        {% if is_session %}
-        <button class="btn btn-primary">Głosuj</button>
-        {% endif %}
-    </form>
-</div>
+            <input id="new_choice" name="new_choice" type="text" class="form-control" >
+         </div>
+         {% elif is_peopleQ %}
+         <div class="form-group">
+            <label for="new_choice">
+                Własna propozycja:
+            </label>
+            <input id="new_choice" name="new_choice" type="text" class="form-control" >
+            <datalist id="employers">
+                <select>
+                    {% for e in employers%}
+                    <option value="{{ e }}">{{ e }} </option>
+                    {% endfor %}
+                </select>
+            </datalist>
+         </div>
+         {% endif %}
+
+
+         {% if is_session %}
+         <button class="btn btn-primary">Głosuj</button>
+         {% endif %}
+      </form>
+   </div>
 {% endblock %}
