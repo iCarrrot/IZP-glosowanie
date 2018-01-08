@@ -16,25 +16,20 @@
             <label for="new_choice">
                 Własna propozycja:
             </label>
-            <input id="new_choice" name="new_choice" type="text" class="form-control" >
-         </div>
-         {% elif is_peopleQ %}
-         <div class="form-group">
-            <label for="new_choice">
-                Własna propozycja:
-            </label>
-            <input id="new_choice" name="new_choice" type="text" class="form-control" >
-            <datalist id="employers">
-                <select>
-                    {% for e in employers%}
-                    <option value="{{ e }}">{{ e }} </option>
-                    {% endfor %}
-                </select>
-            </datalist>
+            {% if is_peopleQ %}
+                <input id="new_choice" name="new_choice" type="text" class="form-control"  list="employers">
+                <datalist id="employers">
+                    <select>
+                        {% for e in employers %}
+                        <option value="{{ e }}">{{ e }} </option>
+                        {% endfor %}
+                    </select>
+                </datalist>
+            {% else %}
+                <input id="new_choice" name="new_choice" type="text" class="form-control" >
+            {% endif %}
          </div>
          {% endif %}
-
-
          {% if is_session %}
          <button class="btn btn-primary">Głosuj</button>
          {% endif %}

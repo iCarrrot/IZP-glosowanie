@@ -33,7 +33,10 @@ def question_detail(request, question_id):
 
     if not question.is_active():
         return render(request, 'polls/question_detail.html', {
-            'question': question, 'error': "Głosowanie nie jest aktywne"})
+            'question': question,
+            'error': "Głosowanie nie jest aktywne",
+            'is_open': is_open,
+            'is_peopleQ': is_peopleQ, })
 
     if not is_session:
         return render(request,
@@ -156,6 +159,7 @@ def vote(request, question_id):
                       {'question': question,
                        'error': "Głosowanie nie jest aktywne",
                        'is_open': is_open,
+                       'is_peopleQ': is_peopleQ,
                        'is_session': is_session})
 
     if is_session:
@@ -166,6 +170,7 @@ def vote(request, question_id):
                       {'question': question,
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
+                       'is_peopleQ': is_peopleQ,
                        'is_session': is_session})
 
     choice = request.POST.get('choice', None)
@@ -195,7 +200,7 @@ def vote(request, question_id):
         if question.choice_set.filter(pk=choice).exists():
             choice = question.choice_set.get(pk=choice)
         else:
-            if is_open or is_peopleQ:
+            if is_open:
                 return render(
                     request, 'polls/question_detail.html',
                     {'question': question,
