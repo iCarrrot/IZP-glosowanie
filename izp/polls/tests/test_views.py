@@ -255,7 +255,7 @@ class PeopleQuestionVoteViewTests(TestCase):
                   'code': self.client.session['poll'
                                               + str(people_question.poll.id)]})
         basic_check_of_open_question(
-            self, response,     le_question, "Nie wybrano odpowiedzi")
+            self, response, people_question, "Nie wybrano odpowiedzi")
 
 
 class CodesViewsTests(TestCase):

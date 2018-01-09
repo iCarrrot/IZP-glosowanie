@@ -202,7 +202,7 @@ def vote(request, question_id):
                     'is_peopleQ': is_peopleQ,
                     'employers': employers,
                     'is_session': is_session})
-    
+
     if not choice and is_open:
         if Choice.objects.filter(question__exact=question,
                                  choice_text__exact=new_choice).exists():
