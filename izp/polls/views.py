@@ -36,7 +36,8 @@ def question_detail(request, question_id):
             'question': question,
             'error': "Głosowanie nie jest aktywne",
             'is_open': is_open,
-            'is_peopleQ': is_peopleQ, })
+            'is_peopleQ': is_peopleQ,
+            'employers': employers})
 
     if not is_session:
         return render(request,
@@ -45,26 +46,15 @@ def question_detail(request, question_id):
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
                        'is_peopleQ': is_peopleQ,
-                       'is_session': is_session})
-
-    if PeopleQuestion.objects.filter(pk=question_id).exists():
-        peopleQuestion = PeopleQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/question_detail.html',
-                      {'question': peopleQuestion,
-                       'is_open': is_open,
-                       'is_peopleQ': is_peopleQ,
                        'employers': employers,
                        'is_session': is_session})
-    elif OpenQuestion.objects.filter(pk=question_id).exists():
-        openQuestion = OpenQuestion.objects.get(pk=question_id)
-        return render(request, 'polls/question_detail.html',
-                      {'question': openQuestion,
-                       'is_session': is_session,
-                       'is_open': is_open,
-                       'is_peopleQ': is_peopleQ, })
-    else:
-        return render(request, 'polls/detail.html',
-                      {'question': question, 'is_session': is_session})
+
+    return render(request, 'polls/question_detail.html',
+                  {'question': question,
+                   'is_open': is_open,
+                   'is_peopleQ': is_peopleQ,
+                   'employers': employers,
+                   'is_session': is_session})
 
 
 def format_codes_list(codes_list):
@@ -160,6 +150,7 @@ def vote(request, question_id):
                        'error': "Głosowanie nie jest aktywne",
                        'is_open': is_open,
                        'is_peopleQ': is_peopleQ,
+                       'employers': employers,
                        'is_session': is_session})
 
     if is_session:
@@ -171,6 +162,7 @@ def vote(request, question_id):
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
                        'is_peopleQ': is_peopleQ,
+                       'employers': employers,
                        'is_session': is_session})
 
     choice = request.POST.get('choice', None)
@@ -185,6 +177,7 @@ def vote(request, question_id):
                           jednocześnie proponować nową",
                 'is_open': is_open,
                 'is_peopleQ': is_peopleQ,
+                'employers': employers,
                 'is_session': is_session})
 
     if not choice and new_choice == '':
@@ -194,37 +187,23 @@ def vote(request, question_id):
                           'error': "Nie wybrano odpowiedzi",
                           'is_open': is_open,
                           'is_peopleQ': is_peopleQ,
+                          'employers': employers,
                           'is_session': is_session})
 
     if choice:
         if question.choice_set.filter(pk=choice).exists():
             choice = question.choice_set.get(pk=choice)
         else:
-            if is_open:
-                return render(
-                    request, 'polls/question_detail.html',
-                    {'question': question,
-                     'error': "Odpowiedź nie istnieje",
-                     'is_open': is_open,
-                     'is_peopleQ': is_peopleQ,
-                     'is_session': is_session})
-            else:
-                return render(
-                    request, 'polls/detail.html',
-                    {'question': question,
-                     'error': "Odpowiedź nie istnieje",
-                     'is_session': is_session})
-    if not choice and PeopleQuestion.objects.filter(pk=question.pk).exists():
-        if not Choice.objects.filter(
-                question__exact=question,
-                choice_text=new_choice).exists():
-            choice = Choice.objects.create(
-                question=question, choice_text=new_choice)
-        else:
-            choice = Choice.objects.get(
-                question__exact=question, choice_text=new_choice)
-
-    if not choice and (is_open or is_peopleQ):
+            return render(
+                request, 'polls/question_detail.html',
+                {'question': question,
+                    'error': "Odpowiedź nie istnieje",
+                    'is_open': is_open,
+                    'is_peopleQ': is_peopleQ,
+                    'employers': employers,
+                    'is_session': is_session})
+    
+    if not choice and is_open:
         if Choice.objects.filter(question__exact=question,
                                  choice_text__exact=new_choice).exists():
             choice = Choice.objects.filter(

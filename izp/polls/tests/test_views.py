@@ -134,7 +134,7 @@ class PeopleQuestionDetailViewTests(TestCase):
 
     def test_people_question_with_choices(self):
         '''
-        Test for detail view of open question
+        Test for detail view of people question
         '''
         people_question = PeopleQuestion.objects.get(
             question_text="PeopleQuestion")
@@ -144,7 +144,7 @@ class PeopleQuestionDetailViewTests(TestCase):
 
     def test_people_question_without_choices(self):
         '''
-        Test for detail view of empty open question
+        Test for detail view of empty people question
         '''
         people_question = PeopleQuestion.objects.get(
             question_text="PeopleQuestion")
@@ -255,7 +255,7 @@ class PeopleQuestionVoteViewTests(TestCase):
                   'code': self.client.session['poll'
                                               + str(people_question.poll.id)]})
         basic_check_of_open_question(
-            self, response, people_question, "Nie wybrano odpowiedzi")
+            self, response,     le_question, "Nie wybrano odpowiedzi")
 
 
 class CodesViewsTests(TestCase):
