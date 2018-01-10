@@ -152,3 +152,4 @@ class Vote(models.Model):
         return self.question.question_text + ' ' + \
             self.choice.choice_text + ' ' \
             + self.code.code
+    
