@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
-from .employers import employers
+from .employers import get_employers_list
 from .models import AccessCode, Choice, Question, Vote, \
     OpenQuestion, PeopleQuestion, Poll
 
@@ -28,7 +28,7 @@ def question_detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
 
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
-    is_peopleQ = PeopleQuestion.objects.filter(pk=question.pk).exists()
+    is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
 
     if not question.is_active():
@@ -36,8 +36,8 @@ def question_detail(request, question_id):
             'question': question,
             'error': "Głosowanie nie jest aktywne",
             'is_open': is_open,
-            'is_peopleQ': is_peopleQ,
-            'employers': employers})
+            'is_people_question': is_people_question,
+            'employers': get_employers_list()})
 
     if not is_session:
         return render(request,
@@ -45,15 +45,15 @@ def question_detail(request, question_id):
                       {'question': question,
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
-                       'is_peopleQ': is_peopleQ,
-                       'employers': employers,
+                       'is_people_question': is_people_question,
+                       'employers': get_employers_list(),
                        'is_session': is_session})
 
     return render(request, 'polls/question_detail.html',
                   {'question': question,
                    'is_open': is_open,
-                   'is_peopleQ': is_peopleQ,
-                   'employers': employers,
+                   'is_people_question': is_people_question,
+                   'employers': get_employers_list(),
                    'is_session': is_session})
 
 
@@ -140,7 +140,7 @@ def login(request, poll_id):
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
-    is_peopleQ = PeopleQuestion.objects.filter(pk=question.pk).exists()
+    is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
 
     if not question.is_active():
@@ -149,8 +149,8 @@ def vote(request, question_id):
                       {'question': question,
                        'error': "Głosowanie nie jest aktywne",
                        'is_open': is_open,
-                       'is_peopleQ': is_peopleQ,
-                       'employers': employers,
+                       'is_people_question': is_people_question,
+                       'employers': get_employers_list(),
                        'is_session': is_session})
 
     if is_session:
@@ -161,8 +161,8 @@ def vote(request, question_id):
                       {'question': question,
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
-                       'is_peopleQ': is_peopleQ,
-                       'employers': employers,
+                       'is_people_question': is_people_question,
+                       'employers': get_employers_list(),
                        'is_session': is_session})
 
     choice = request.POST.get('choice', None)
@@ -176,8 +176,8 @@ def vote(request, question_id):
                 'error': "Nie można głosować na istniejącą odpowiedź i \
                           jednocześnie proponować nową",
                 'is_open': is_open,
-                'is_peopleQ': is_peopleQ,
-                'employers': employers,
+                'is_people_question': is_people_question,
+                'employers': get_employers_list(),
                 'is_session': is_session})
 
     if not choice and new_choice == '':
@@ -186,8 +186,8 @@ def vote(request, question_id):
                           'question': question,
                           'error': "Nie wybrano odpowiedzi",
                           'is_open': is_open,
-                          'is_peopleQ': is_peopleQ,
-                          'employers': employers,
+                          'is_people_question': is_people_question,
+                          'employers': get_employers_list(),
                           'is_session': is_session})
 
     if choice:
@@ -199,8 +199,8 @@ def vote(request, question_id):
                 {'question': question,
                     'error': "Odpowiedź nie istnieje",
                     'is_open': is_open,
-                    'is_peopleQ': is_peopleQ,
-                    'employers': employers,
+                    'is_people_question': is_people_question,
+                    'employers': get_employers_list(),
                     'is_session': is_session})
 
     if not choice and is_open:

@@ -16,7 +16,7 @@
             <label for="new_choice">
                 Własna propozycja:
             </label>
-            {% if is_peopleQ %}
+            {% if is_people_question %}
                 <input id="new_choice" name="new_choice" type="text" class="form-control"  list="employers">
                 <datalist id="employers">
                     <select>
@@ -26,7 +26,7 @@
                     </select>
                 </datalist>
             {% else %}
-                <input id="new_choice" name="new_choice" type="text" class="form-control" >
+                <input id="new_choice" name="new_choice" type="text" class="form-control">
             {% endif %}
          </div>
          {% endif %}

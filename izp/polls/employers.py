@@ -4,13 +4,16 @@ In new file for clear code.
 """
 
 
-employers = []
-try:
-    with open("polls/static/data/employers") as f:
-        for line in f:
-            employers.append(line)
-except FileNotFoundError:
+def get_employers_list():
 
-    print('\033[93m'
-          + "WARNING: File: polls/static/data/employers not found!\n"
-          + '\033[0m')
+    employers = []
+    try:
+        with open("polls/static/data/employers") as f:
+            employers = f.read().split('\n')
+
+    except FileNotFoundError:
+        print('\033[93m'
+              + "WARNING: File: polls/static/data/employers not found!\n"
+              + '\033[0m')
+
+    return employers
