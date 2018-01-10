@@ -11,6 +11,6 @@ try:
             employers.append(line)
 except FileNotFoundError:
 
-    print ('\033[93m'
-           + "WARNING: File: polls/static/data/employers not found!\n"
-           + '\033[0m')
+    print('\033[93m'
+          + "WARNING: File: polls/static/data/employers not found!\n"
+          + '\033[0m')
