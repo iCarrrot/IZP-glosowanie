@@ -4,16 +4,22 @@ In new file for clear code.
 """
 
 
-def get_employers_list():
+class Employers:
+    __list = None
 
-    employers = []
-    try:
-        with open("polls/static/data/employers") as f:
-            employers = f.read().split('\n')
+    @classmethod
+    def get_list(cls):
+        if cls.__list is None:
+            data = []
+            try:
+                with open("polls/static/data/employers") as f:
+                    data = f.read().split('\n')
 
-    except FileNotFoundError:
-        print('\033[93m'
-              + "WARNING: File: polls/static/data/employers not found!\n"
-              + '\033[0m')
+            except FileNotFoundError:
+                print('\033[93m'
+                      + "WARNING: File: polls/static/data/employers not found!"
+                      + '\n' + '\033[0m')
 
-    return employers
+            cls.__list = data
+
+        return cls.__list

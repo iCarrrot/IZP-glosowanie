@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import user_passes_test
 from easy_pdf.rendering import render_to_pdf_response
-from .employers import get_employers_list
+from .employers import Employers
 from .models import AccessCode, Choice, Question, Vote, \
     OpenQuestion, PeopleQuestion, Poll
 
@@ -30,6 +30,7 @@ def question_detail(request, question_id):
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
     is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
+    employers_list = Employers.get_list()
 
     if not question.is_active():
         return render(request, 'polls/question_detail.html', {
@@ -37,7 +38,7 @@ def question_detail(request, question_id):
             'error': "Głosowanie nie jest aktywne",
             'is_open': is_open,
             'is_people_question': is_people_question,
-            'employers': get_employers_list()})
+            'employers': employers_list})
 
     if not is_session:
         return render(request,
@@ -46,14 +47,14 @@ def question_detail(request, question_id):
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
                        'is_people_question': is_people_question,
-                       'employers': get_employers_list(),
+                       'employers': employers_list,
                        'is_session': is_session})
 
     return render(request, 'polls/question_detail.html',
                   {'question': question,
                    'is_open': is_open,
                    'is_people_question': is_people_question,
-                   'employers': get_employers_list(),
+                   'employers': employers_list,
                    'is_session': is_session})
 
 
@@ -151,7 +152,7 @@ def vote(request, question_id):
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
     is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
-
+    employers_list = Employers.get_list()
     if not question.is_active():
         return render(request,
                       'polls/question_detail.html',
@@ -159,7 +160,7 @@ def vote(request, question_id):
                        'error': "Głosowanie nie jest aktywne",
                        'is_open': is_open,
                        'is_people_question': is_people_question,
-                       'employers': get_employers_list(),
+                       'employers': employers_list,
                        'is_session': is_session})
 
     if is_session:
@@ -171,7 +172,7 @@ def vote(request, question_id):
                        'error': "Użytkownik niezalogowany",
                        'is_open': is_open,
                        'is_people_question': is_people_question,
-                       'employers': get_employers_list(),
+                       'employers': employers_list,
                        'is_session': is_session})
 
     choice = request.POST.get('choice', None)
@@ -186,7 +187,7 @@ def vote(request, question_id):
                           jednocześnie proponować nową",
                 'is_open': is_open,
                 'is_people_question': is_people_question,
-                'employers': get_employers_list(),
+                'employers': employers_list,
                 'is_session': is_session})
 
     if not choice and new_choice == '':
@@ -196,7 +197,7 @@ def vote(request, question_id):
                           'error': "Nie wybrano odpowiedzi",
                           'is_open': is_open,
                           'is_people_question': is_people_question,
-                          'employers': get_employers_list(),
+                          'employers': employers_list,
                           'is_session': is_session})
 
     if choice:
@@ -209,7 +210,7 @@ def vote(request, question_id):
                     'error': "Odpowiedź nie istnieje",
                     'is_open': is_open,
                     'is_people_question': is_people_question,
-                    'employers': get_employers_list(),
+                    'employers': employers_list,
                     'is_session': is_session})
 
     if not choice and is_open:
