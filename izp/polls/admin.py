@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from .employers import Employers
 from .models import Choice, Poll, Question, SimpleQuestion, \
     OpenQuestion, PeopleQuestion
 
