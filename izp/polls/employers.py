@@ -12,8 +12,9 @@ class Employers:
 
     @classmethod
     def get_list(cls):
-        """Tak file polls/static/data/employers and convert it into the list of employers
-        
+        """Tak file polls/static/data/employers and convert
+           it into the list of employers
+
         Returns:
             list -- string list of employers
         """

@@ -86,6 +86,7 @@ class QuestionTests(TestCase):
     Tests for Question class methods:
     is_available, is_active, activate, deactivate
     """
+
     def setUp(self):
         poll = Poll.objects.create()
         question = Question.objects.create(
@@ -122,7 +123,7 @@ class QuestionTests(TestCase):
 
 
 class OpenQuestionTests(TestCase):
-    
+
     def test_creating_open_question(self):
         poll = Poll.objects.create()
         open_question = OpenQuestion.objects.create(
@@ -139,26 +140,6 @@ class OpenQuestionTests(TestCase):
         open_question = OpenQuestion.objects.create(
             poll=poll, question_text="OpenQuestion")
         self.assertIs(len(open_question.choice_set.all()), 0)
-
-
-class PeopleQuestionTests(TestCase):
-
-    def test_creating_people_question(self):
-        poll = Poll.objects.create()
-        people_question = PeopleQuestion.objects.create(
-            poll=poll, question_text="PeopleQuestion")
-        people_question.choice_set.create(choice_text="Odp1")
-        people_question.choice_set.create(choice_text="Odp2")
-        self.assertIs(len(people_question.choice_set.all()), 2)
-        people_question = map(str, people_question.choice_set.all())
-        self.assertIs(
-            'Odp1' in people_question and 'Odp2' in people_question, True)
-
-    def test_creating_empty_people_question(self):
-        poll = Poll.objects.create()
-        people_question = PeopleQuestion.objects.create(
-            poll=poll, question_text="PeopleQuestion")
-        self.assertIs(len(people_question.choice_set.all()), 0)
 
 
 class SimpleQuestionTests(TestCase):
@@ -219,7 +200,13 @@ class PollTests(TestCase):
 
 
 class EmployersClassTest(TestCase):
+    """Tests for Employers class
+    """
+
     def test_list_correction(self):
+        """Test if employers_list is created correctly
+        """
+
         employers_list = Employers.get_list()
         if os.path.exists('polls/static/data/employers'):
             data = []

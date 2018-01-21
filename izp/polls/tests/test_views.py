@@ -1,13 +1,10 @@
 """
 Tests for views
 """
-import datetime
 from django.test import TestCase
-from django.utils import timezone
 from django.urls import reverse
-from polls.models import Question, SimpleQuestion, OpenQuestion, \
-    PeopleQuestion, Poll
 from django.contrib.auth.models import User
+from polls.models import Question, OpenQuestion, PeopleQuestion, Poll
 from polls.views import is_vote_successful
 
 
@@ -141,7 +138,10 @@ class PeopleQuestionDetailViewTests(TestCase):
             question_text="PeopleQuestion")
         url = reverse('polls:question_detail', args=(people_question.id,))
         response = self.client.get(url)
-        basic_check_of_open_question(self, response, people_question)
+        self.assertContains(response, people_question.question_text)
+        self.assertContains(response, 'new_choice')
+        self.assertContains(response, 'list="employers"')
+        self.assertContains(response, 'datalist id="employers"')
 
     def test_people_question_without_choices(self):
         '''
@@ -153,6 +153,8 @@ class PeopleQuestionDetailViewTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, people_question.question_text)
         self.assertContains(response, 'new_choice')
+        self.assertContains(response, 'list="employers"')
+        self.assertContains(response, 'datalist id="employers"')
 
 
 class QuestionVoteViewTests(TestCase):
@@ -217,88 +219,46 @@ class OpenQuestionVoteViewTests(TestCase):
             self, response, open_question, "Nie wybrano odpowiedzi")
 
 
-class PeopleQuestionVoteViewTests(TestCase):
+class CodesViewsTests(TestCase):
     def setUp(self):
-        poll = Poll.objects.create()
-        people_question = PeopleQuestion.objects.create(
-            poll=poll, question_text="PeopleQuestion")
-        people_question.activate()
-        people_question.choice_set.create(choice_text="Odp1")
-        people_question.choice_set.create(choice_text="Odp2")
+        User.objects.create_superuser(
+            'user1',
+            'user1@example.com',
+            'pswd',
+        )
 
-        s = self.client.session
-        s['poll' + str(people_question.poll.id)] = poll.get_codes()[0]
-        s.save()
+        self.poll = Poll.objects.create()
+        self.q = OpenQuestion.objects.create(poll=self.poll,
+                                             question_text="question 1")
 
-    def test_two_answers_for_people_question(self):
-        people_question = PeopleQuestion.objects.get(
-            question_text="PeopleQuestion")
-        url = reverse('polls:vote', args=(people_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'choice': people_question.choice_set.all().last().id,
-                  'new_choice': "sth"})
+    def test_codes_html_view_as_superuser(self):
+        self.client.login(username="user1", password="pswd")
+        url = reverse('polls:codes', args=(self.poll.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            len(response.context['codes_list']) == len(self.poll.get_codes()))
+        self.client.logout()
 
-        basic_check_of_open_question(
-            self,
-            response,
-            people_question,
-            "Nie można głosować na istniejącą odpowiedź i \
-                          jednocześnie proponować nową")
+    def test_codes_pdf_view_as_superuser(self):
+        self.client.login(username="user1", password="pswd")
+        url = reverse('polls:codes_pdf', args=(self.poll.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            len(response.context['codes_list']) == len(self.poll.get_codes()))
+        self.client.logout()
 
-    def test_no_answers_for_people_question(self):
-        people_question = PeopleQuestion.objects.get(
-            question_text="PeopleQuestion")
-        url = reverse('polls:vote', args=(people_question.id,))
-        response = self.client.post(
-            url, {'is_open': True,
-                  'new_choice': '',
-                  'code': self.client.session['poll'
-                                              + str(people_question.poll.id)]})
-        basic_check_of_open_question(
-            self, response, people_question, "Nie wybrano odpowiedzi")
+    def test_codes_html_view_as_user(self):
+        url = reverse('polls:codes', args=(self.poll.id,))
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, 404)
 
-
-# class CodesViewsTests(TestCase):
-#     def setUp(self):
-#         User.objects.create_superuser(
-#             'user1',
-#             'user1@example.com',
-#             'pswd',
-#         )
-
-#         self.poll = Poll.objects.create()
-#         self.q = OpenQuestion.objects.create(poll=self.poll,
-#                                              question_text="question 1")
-
-#     def test_codes_html_view_as_superuser(self):
-#         self.client.login(username="user1", password="pswd")
-#         url = reverse('polls:codes', args=(self.poll.id,))
-#         response = self.client.get(url)
-#         self.assertEqual(response.status_code, 200)
-#         self.assertTrue(
-#             len(response.context['codes_list']) == len(self.poll.get_codes()))
-#         self.client.logout()
-
-#     def test_codes_pdf_view_as_superuser(self):
-#         self.client.login(username="user1", password="pswd")
-#         url = reverse('polls:codes_pdf', args=(self.poll.id,))
-#         response = self.client.get(url)
-#         self.assertEqual(response.status_code, 200)
-#         self.assertTrue(
-#             len(response.context['codes_list']) == len(self.poll.get_codes()))
-#         self.client.logout()
-
-#     def test_codes_html_view_as_user(self):
-#         url = reverse('polls:codes', args=(self.poll.id,))
-#         response = self.client.get(url, follow=True)
-#         self.assertEqual(response.status_code, 404)
-
-#     def test_codes_pdf_view_as_user(self):
-#         def test_codes_html_view_as_user(self):
-#             url = reverse('polls:codes_pdf', args=(self.poll.id,))
-#             response = self.client.get(url, follow=True)
-#             self.assertEqual(response.status_code, 404)
+    def test_codes_pdf_view_as_user(self):
+        def test_codes_html_view_as_user(self):
+            url = reverse('polls:codes_pdf', args=(self.poll.id,))
+            response = self.client.get(url, follow=True)
+            self.assertEqual(response.status_code, 404)
 
 
 class ViewsIsVoteSuccessfulFunctionTest(TestCase):
