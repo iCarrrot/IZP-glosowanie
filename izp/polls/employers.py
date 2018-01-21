@@ -1,14 +1,22 @@
 """
 Employers list
-In new file for clear code.
+In new file for clearer code.
 """
 
 
 class Employers:
+    """Creating list of employers from file
+    """
+
     __list = None
 
     @classmethod
     def get_list(cls):
+        """Tak file polls/static/data/employers and convert it into the list of employers
+        
+        Returns:
+            list -- string list of employers
+        """
         if cls.__list is None:
             data = []
             try:
