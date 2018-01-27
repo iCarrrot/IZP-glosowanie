@@ -6,8 +6,8 @@ from easy_pdf.rendering import render_to_pdf_response
 from django.utils import timezone
 import textwrap
 from .employers import Employers
-from .models import AccessCode, Choice, Question, Vote, OpenQuestion, Poll, PeopleQuestion, \
-    Comment, CommentForm
+from .models import AccessCode, Choice, Question, Vote, OpenQuestion, Poll, \
+    PeopleQuestion, Comment, CommentForm
 
 
 def poll_index(request):
