@@ -139,8 +139,7 @@ class PeopleQuestionDetailViewTests(TestCase):
             question_text="PeopleQuestion")
         url = reverse('polls:question_detail', args=(people_question.id,))
         response = self.client.get(url)
-        self.assertContains(response, people_question.question_text)
-        self.assertContains(response, 'new_choice')
+        basic_check_of_open_question(self, response, people_question)
         self.assertContains(response, 'list="employers"')
         self.assertContains(response, 'datalist id="employers"')
 
