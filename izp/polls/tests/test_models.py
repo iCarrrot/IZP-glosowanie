@@ -200,11 +200,13 @@ class PollTests(TestCase):
 
 
 class EmployersClassTest(TestCase):
-    """Tests for Employers class
+    """
+    Tests for Employers class
     """
 
     def test_list_correction(self):
-        """Test if employers_list is created correctly
+        """
+        Test if employers_list is created correctly
         """
 
         employers_list = Employers.get_list()

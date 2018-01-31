@@ -32,7 +32,6 @@ def question_detail(request, question_id):
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
     is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
-    employers_list = Employers.get_list()
     comments = Comment.objects.filter(
         question__exact=question).order_by('-date')
 
@@ -40,7 +39,7 @@ def question_detail(request, question_id):
                'is_open': is_open,
                'is_session': is_session,
                'is_people_question': is_people_question,
-               'employers': employers_list,
+               'employers': Employers.get_list(),
                'comments': comments}
 
     if question.activation_time is None \
@@ -51,7 +50,6 @@ def question_detail(request, question_id):
 
     if not question.is_active():
         context['error'] = "Głosowanie nie jest aktywne"
-
         return render(request, 'polls/question_detail.html', context)
 
     if not is_session:
@@ -155,11 +153,10 @@ def vote(request, question_id):
     is_open = OpenQuestion.objects.filter(pk=question.pk).exists()
     is_people_question = PeopleQuestion.objects.filter(pk=question.pk).exists()
     is_session = 'poll' + str(question.poll.id) in request.session
-    employers_list = Employers.get_list()
     context = {'question': question,
                'is_open': is_open,
                'is_people_question': is_people_question,
-               'employers': employers_list,
+               'employers': Employers.get_list(),
                'is_session': is_session}
 
     if not question.is_active():

@@ -5,14 +5,16 @@ In new file for clearer code.
 
 
 class Employers:
-    """Creating list of employers from file
+    """
+    Creating list of employers from file
     """
 
     __list = None
 
     @classmethod
     def get_list(cls):
-        """Tak file polls/static/data/employers and convert
+        """
+        Takes file polls/static/data/employers and converts
            it into the list of employers
 
         Returns:
